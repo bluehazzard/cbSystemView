@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="cbSystemView" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="default">
+				<Option output="cbSystemView" prefix_auto="1" extension_auto="1" />
+				<Option object_output=".objs/default" />
+				<Option type="3" />
+				<Option compiler="gcc" />
+				<Option host_application="$(#cb)/devel30/codeblocks.exe" />
+				<Option run_host_application_in_terminal="0" />
+				<Compiler>
+					<Add option="-g" />
+					<Add directory="$(#wx30.include)" />
+					<Add directory="$(#wx30.lib)/gcc_dll/mswud" />
+					<Add directory="include" />
+				</Compiler>
+				<Linker>
+					<Add library="wxmsw30ud" />
+					<Add library="codeblocks" />
+					<Add directory="$(#wx30.lib)/gcc_dll" />
+					<Add directory="$(#cb)/devel30" />
+				</Linker>
+				<ExtraCommands>
+					<Add after="zip -j9 cbSystemView.zip manifest.xml" />
+					<Add after="zip -j9 cbSystemView.cbplugin cbSystemView.dll cbSystemView.zip" />
+					<Mode after="always" />
+				</ExtraCommands>
+			</Target>
+			<Target title="to_codeblocks_wx28">
+				<Option output="$(#cb)/devel/share/codeblocks/plugins/cbSystemView" prefix_auto="1" extension_auto="1" />
+				<Option object_output=".objs/to_codeblocks_wx28" />
+				<Option type="3" />
+				<Option compiler="gcc" />
+				<Option parameters="--debug-log --multiple-instance --no-splash-screen --verbose -p debug --no-dde --no-check-associations " />
+				<Option host_application="$(#cb)/devel/codeblocks.exe" />
+				<Option run_host_application_in_terminal="0" />
+				<Compiler>
+					<Add option="-g" />
+					<Add directory="$(#wx.include)" />
+					<Add directory="$(#wx.lib)/gcc_dll/mswu" />
+					<Add directory="$(#cb)/sdk/wxpropgrid/include" />
+					<Add directory="include" />
+				</Compiler>
+				<Linker>
+					<Add library="wxmsw28u" />
+					<Add library="codeblocks" />
+					<Add library="wxpropgrid" />
+					<Add directory="$(#wx.lib)/gcc_dll" />
+					<Add directory="$(#cb)/devel" />
+				</Linker>
+				<ExtraCommands>
+					<Add after="zip -j9 $(#cb)\devel/share/codeblocks/cbSystemView.zip manifest.xml" />
+					<Add after="zip -9 $(#cb)\devel/share/codeblocks/cbSystemView.zip images\*" />
+					<Mode after="always" />
+				</ExtraCommands>
+			</Target>
+			<Target title="to_codeblocks_wx30">
+				<Option output="$(#cb)/devel30/share/codeblocks/plugins/cbSystemView" prefix_auto="1" extension_auto="1" />
+				<Option object_output=".objs/to_codeblocks_wx30" />
+				<Option type="3" />
+				<Option compiler="gcc" />
+				<Option parameters="--debug-log --multiple-instance --no-splash-screen --verbose -p debug --no-dde --no-check-associations " />
+				<Option host_application="$(#cb)/devel30/codeblocks.exe" />
+				<Option run_host_application_in_terminal="0" />
+				<Compiler>
+					<Add option="-g" />
+					<Add directory="$(#wx30.include)" />
+					<Add directory="$(#wx30.lib)/gcc_dll/mswu" />
+					<Add directory="include" />
+				</Compiler>
+				<Linker>
+					<Add library="wxmsw30ud" />
+					<Add library="codeblocks" />
+					<Add directory="$(#wx30.lib)/gcc_dll" />
+					<Add directory="$(#cb)/devel30" />
+				</Linker>
+				<ExtraCommands>
+					<Add after="zip -j9 $(#cb)\devel30/share/codeblocks/cbSystemView.zip manifest.xml" />
+					<Mode after="always" />
+				</ExtraCommands>
+			</Target>
+		</Build>
+		<VirtualTargets>
+			<Add alias="All" targets="default;to_codeblocks_wx28;to_codeblocks_wx30;" />
+		</VirtualTargets>
+		<Compiler>
+			<Add option="-pipe" />
+			<Add option="-mthreads" />
+			<Add option="-fmessage-length=0" />
+			<Add option="-fexceptions" />
+			<Add option="-Winvalid-pch" />
+			<Add option="-std=gnu++11" />
+			<Add option="-DBUILDING_PLUGIN" />
+			<Add option="-DHAVE_W32API_H" />
+			<Add option="-D__WXMSW__" />
+			<Add option="-DWXUSINGDLL" />
+			<Add option="-DcbDEBUG" />
+			<Add option="-DCB_PRECOMP" />
+			<Add option="-DWX_PRECOMP" />
+			<Add option="-DwxUSE_UNICODE" />
+			<Add directory="$(#cb)/include" />
+			<Add directory="$(#cb)/sdk/wxscintilla/include" />
+			<Add directory="$(#cb)/include/tinyxml" />
+		</Compiler>
+		<Linker>
+			<Add option="-mthreads" />
+		</Linker>
+		<Unit filename="cbSystemView.cpp" />
+		<Unit filename="cbSystemView.h" />
+		<Unit filename="include/cbsvdfilereader.h" />
+		<Unit filename="include/cbsvpgproperties.h" />
+		<Unit filename="include/cbsvwindow.h" />
+		<Unit filename="manifest.xml" />
+		<Unit filename="src/cbsvdfilereader.cpp" />
+		<Unit filename="src/cbsvpgproperties.cpp" />
+		<Unit filename="src/cbsvwindow.cpp" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<LibClang />
+			<debugger />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
