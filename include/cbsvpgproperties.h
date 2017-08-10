@@ -4,17 +4,27 @@
 #include <cstdint>
 #include "cbsvdfilereader.h"
 #include <map>
-#include <math>
-#include <sdk>
+#include <algorithm>
+#include <sdk.h>
+#include <wx/propgrid/manager.h>
+#include <wx/defs.h>
+#include <wx/object.h>
+#include <debuggermanager.h>
+
 
 typedef std::vector<uint8_t> data_vetor;
 
-class svPGPropBase
+class svPGPropBase : public wxObject
 {
+        DECLARE_ABSTRACT_CLASS(svPGPropBase);
     public:
-        svPGPropBase()
-        virtual ~svPGPropBase();
-        virtual void SetData(data_vetor &data, data_vetor::iterator& start ) = 0;
+        svPGPropBase()              {};
+        virtual ~svPGPropBase()     {};
+        virtual void SetData( uint64_t data ) {};
+        virtual void Populate() {};
+
+        uint64_t GetAddress()   {return m_addr; };
+        uint64_t GetSize()      {return m_size; };
 
     protected:
         uint64_t m_baseAddr;
@@ -25,38 +35,61 @@ class svPGPropBase
 };
 
 
-class svPGPeripheryProp : public wxStringProperty, svPGPropBase
+class svPGPeripheryProp : public wxStringProperty, public svPGPropBase
 {
+        DECLARE_ABSTRACT_CLASS(svPGPeripheryProp);
     public:
-        svPGPeripheryProp(SVDPeriphery &per);
+        svPGPeripheryProp(const SVDPeriphery &per);
         virtual ~svPGPeripheryProp();
 
-        virtual void SetData(data_vetor &data, data_vetor::iterator& start );
+        virtual void SetData(uint64_t data );
+        void Populate();
     protected:
 
     private:
 };
 
-class svPGRegisterProp : public wxStringProperty, svPGPropBase
+class svPGRegisterProp : public wxStringProperty, public svPGPropBase
 {
+        DECLARE_ABSTRACT_CLASS(svPGRegisterProp);
     public:
-        svPGRegisterProp(SVDRegister &reg);
+        svPGRegisterProp(const SVDRegister &reg, const SVDPeriphery &per);
         virtual ~svPGRegisterProp();
 
-        virtual void SetData(data_vetor &data, data_vetor::iterator& start );
+        void SetData( uint64_t data )    {};
+        void Populate();
+
+        void ChildChanged(wxVariant& thisValue, int childIndex, wxVariant& childValue)  const;
+        void SetValueFromString(const wxString& str, int flags = 0);
+
     protected:
 
     private:
 
 };
 
-class svPGFieldProp : public wxEnumProperty, svPGPropBase
+struct svPGEnumFieldElement
 {
-    public:
-        svPGFieldProp(SVDField &field);
-        virtual ~svPGFieldProp();
+    svPGEnumFieldElement(wxString _name, wxString _description, wxString _text, int _index, uint64_t _value) :
+    name(_name), description(_description), text(_text), index(_index), value(_value)    {};
 
-        virtual void SetData(data_vetor &data, data_vetor::iterator& start );
+    wxString name;
+    wxString description;
+    wxString text;
+    int      index;
+    uint64_t value;
+};
+
+class svPGEnumFieldProp : public wxEnumProperty, public svPGPropBase
+{
+        DECLARE_ABSTRACT_CLASS(svPGEnumFieldProp);
+    public:
+        svPGEnumFieldProp(const SVDField &field);
+        virtual ~svPGEnumFieldProp()    {};
+
+        void Populate();
+
+        void SetData( uint64_t data );
     protected:
 
     private:
@@ -68,17 +101,30 @@ class svPGFieldProp : public wxEnumProperty, svPGPropBase
         uint64_t m_bitSize;
         uint64_t m_bitOffset;
 
-        std::map<int, uint64_t> m_indexValueMap;
+        std::vector<svPGEnumFieldElement> m_elements;
 
 };
 
-class svPGBitProp : public wxBoolProperty, svPGPropBase
+class svPGBitProp : public wxBoolProperty, public svPGPropBase
 {
+        DECLARE_ABSTRACT_CLASS(svPGBitProp);
     public:
-        svPGBitProp(SVDField &field);
-        virtual ~svPGBitProp();
+        svPGBitProp(const SVDField &field) : wxBoolProperty(field.m_name, field.m_name)
+        {
+             SetAttribute(wxPG_BOOL_USE_CHECKBOX,true);
+             SetHelpString(field.m_description);
+             m_mask = field.m_bitRange.GetMask();
+        };
+        virtual ~svPGBitProp()      {};
 
-        virtual void SetData(data_vetor &data, data_vetor::iterator& start );
+        void SetData( uint64_t data )
+        {
+            cbDebuggerPlugin* dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
+            dbg->Log(wxString::Format(wxT("bit value = %d"), (data & m_mask) ));
+            SetValueFromInt((data & m_mask));
+
+        };
+        void Populate() {};
     protected:
 
     private:
@@ -91,13 +137,22 @@ class svPGBitProp : public wxBoolProperty, svPGPropBase
         uint64_t m_bitOffset;
 };
 
-class svPGValueProp : public wxStringProperty, svPGPropBase
+class svPGValueProp : public wxStringProperty, public svPGPropBase
 {
-    public:
-        svPGValueProp(SVDField &field);
-        virtual ~svPGValueProp();
 
-        virtual void SetData(data_vetor &data, data_vetor::iterator& start );
+        DECLARE_ABSTRACT_CLASS(svPGValueProp);
+
+    public:
+        svPGValueProp(const SVDField &field) : wxStringProperty(field.m_name, field.m_name)
+        {
+             SetHelpString(field.m_description);
+             m_mask = field.m_bitRange.GetMask();
+             m_bitOffset = field.m_bitRange.GetOffset();
+        };
+        virtual ~svPGValueProp()    {};
+
+        void SetData( uint64_t data )     { SetValueFromInt((data & m_mask)>>m_bitOffset); };
+        void Populate() {};
     protected:
 
     private:

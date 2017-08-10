@@ -1,6 +1,7 @@
 #include <sdk.h> // Code::Blocks SDK
 #include <configurationpanel.h>
 #include "cbSystemView.h"
+#include <debuggermanager.h>
 
 int ID_DEBUG_WINDOW_MENU=wxNewId();
 
@@ -53,6 +54,40 @@ void cbSystemView::OnAttach()
     evt.floatingSize.Set(400, 300);
     evt.minimumSize.Set(200, 150);
     Manager::Get()->ProcessEvent(evt);
+
+    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_STARTED,  new cbEventFunctor<cbSystemView, CodeBlocksEvent>(this, &cbSystemView::OnDebuggerStarted));
+    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_FINISHED, new cbEventFunctor<cbSystemView, CodeBlocksEvent>(this, &cbSystemView::OnDebuggerFinished));
+    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_PAUSED,   new cbEventFunctor<cbSystemView, CodeBlocksEvent>(this, &cbSystemView::OnDebuggerPaused));
+
+}
+
+void cbSystemView::OnDebuggerStarted(CodeBlocksEvent& evt)
+{
+    //cbMessageBox(wxT("started"));
+    //cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
+    //m_watch = dbg->AddMemoryRange(0x0028fefe, 1024, wxT("bla"));
+}
+
+void cbSystemView::OnDebuggerFinished(CodeBlocksEvent& evt)
+{
+    //cbMessageBox(wxT("finished"));
+}
+
+void cbSystemView::OnDebuggerPaused(CodeBlocksEvent& evt)
+{
+    //cbMessageBox(wxT("paused"));
+    /*cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
+    wxString data;
+    wxString msg = wxT("memory watch data: ");
+    m_watch->GetValue(data);
+    wxCharBuffer dd = data.To8BitData();
+    msg << wxString::Format(wxT(" size: %d "), data.length());
+    for(size_t i = 0; i < data.size(); ++i)
+    {
+        msg << wxString::Format(wxT(" 0x%x"), dd[i]);
+    }
+    dbg->Log(msg);*/
+    m_window->UpdateWatches();
 
 }
 

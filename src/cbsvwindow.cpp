@@ -1,8 +1,13 @@
 #include "cbsvwindow.h"
 
-const long cbSVWindow::ID_SEARCH_CTRL = wxNewId();
-const long cbSVWindow::ID_BTN_EXPAND_TREE = wxNewId();
+#include <wx/progdlg.h>
+#include <debuggermanager.h>
+
+const long cbSVWindow::ID_SEARCH_CTRL       = wxNewId();
+const long cbSVWindow::ID_BTN_EXPAND_TREE   = wxNewId();
 const long cbSVWindow::ID_BTN_COLLAPSE_TREE = wxNewId();
+const long cbSVWindow::ID_SEARCH_TIMER      = wxNewId();
+const long cbSVWindow::ID_PROP_GRID         = wxNewId();
 
 BEGIN_EVENT_TABLE(cbSVWindow,wxPanel)
 	//(*EventTable(CPURegistersDlg)
@@ -11,6 +16,11 @@ BEGIN_EVENT_TABLE(cbSVWindow,wxPanel)
 
 	EVT_TOOL( ID_BTN_EXPAND_TREE,   cbSVWindow::OnModifyTree )
 	EVT_TOOL( ID_BTN_COLLAPSE_TREE, cbSVWindow::OnModifyTree )
+
+	EVT_PG_ITEM_EXPANDED(ID_PROP_GRID, cbSVWindow::OnItemExpand)
+	EVT_PG_ITEM_COLLAPSED(ID_PROP_GRID, cbSVWindow::OnItemCollapsed)
+
+	EVT_TIMER( ID_SEARCH_TIMER, cbSVWindow::OnSearchTimer)
 
    // EVT_PG_CHANGED(ID_CUSTOM1, CPURegistersDlg::OnPropertyChanged)
    // EVT_PG_CHANGING(ID_CUSTOM1, CPURegistersDlg::OnPropertyChanging)
@@ -43,7 +53,7 @@ cbSVWindow::cbSVWindow(wxWindow* parent) : wxPanel(parent, wxID_ANY, wxDefaultPo
 {
     //ctor
     wxBoxSizer* bs = new wxBoxSizer(wxVERTICAL);
-    m_pg_man = new wxPropertyGridManager(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPG_DESCRIPTION | wxPG_TOOLBAR);
+    m_pg_man = new wxPropertyGridManager(this, ID_PROP_GRID, wxDefaultPosition, wxDefaultSize, wxPG_DESCRIPTION | wxPG_TOOLBAR);
     #if wxCHECK_VERSION(3, 0, 0)
         m_pg_first_page = m_pg_man->AddPage(wxT("First Page"));
     #else
@@ -87,6 +97,8 @@ cbSVWindow::cbSVWindow(wxWindow* parent) : wxPanel(parent, wxID_ANY, wxDefaultPo
     m_pg_first_page->SetColumnCount(4);
     m_pg_first_page->Append( new wxPropertyCategory(_T("Category per") ));
 
+    m_searchTimer = new wxTimer(this, ID_SEARCH_TIMER);
+
     PopulateGrid();
 }
 
@@ -94,6 +106,7 @@ cbSVWindow::~cbSVWindow()
 {
     delete m_reader;
     delete m_device;
+    delete m_searchTimer;
     //dtor
 }
 
@@ -105,7 +118,135 @@ void cbSVWindow::OnModifyTree(wxCommandEvent& event)
         m_pg_first_page->ExpandAll(false);
 }
 
-bool FindString(wxString a, wxString b)
+
+
+void cbSVWindow::PopulateGrid()
+{
+    m_pg_first_page->Clear();
+
+    auto itr_per = m_device->m_peripherals.begin();
+    for(;itr_per != m_device->m_peripherals.end(); ++itr_per)
+    {
+        svPGPeripheryProp* prop = new svPGPeripheryProp(*(*itr_per).get());
+        m_pg_first_page->Append(prop);
+        prop->Populate();
+        //PopulateSVDPherypheryPropGrid(m_pg_first_page,*(*itr_per).get());
+    }
+}
+
+void cbSVWindow::UpdateWatches()
+{
+    auto itr = m_RegisterWatches.begin();
+    for(; itr != m_RegisterWatches.end() ; ++itr)
+    {
+        wxString val;
+        (*itr).m_watch->GetValue(val);
+        dynamic_cast<svPGRegisterProp*>((*itr).m_property)->SetValueFromString(val);
+    }
+}
+
+void cbSVWindow::GenerateWatchesRecursive(wxPGProperty* prop, cbDebuggerPlugin *dbg)
+{
+    size_t child_count = prop->GetChildCount();
+    bool isRegister = prop->IsKindOf(CLASSINFO(svPGRegisterProp) );
+    if (isRegister )
+    {
+        std::list<RegisterWatch>::iterator watch_itr = FindWatchFromProperty(prop);
+        if(prop->IsExpanded() && watch_itr == m_RegisterWatches.end() )
+        {
+            RegisterWatch watch;
+            watch.m_property = prop;
+            watch.m_watch    = dbg->AddMemoryRange( reg_base->GetAddress() , reg_base->GetSize(), reg->GetName() );
+
+            m_RegisterWatches.push_back(watch);
+        }
+        else if(prop->IsExpanded() == false && watch_itr != m_RegisterWatches.end())
+        {
+            m_RegisterWatches.erase(watch_itr);
+        }
+
+    }
+
+    for (size_t i = 0; i < child_count; ++i)
+    {
+        GenerateWatchesRecursive(prop->Item(i), dbg);
+    }
+}
+
+bool cbSVWindow::FindWatchFromProperty(wxPGProperty* prop )
+{
+    return FindWatchFromProperty(prop) == m_RegisterWatches.end();
+}
+
+std::list<RegisterWatch>::iterator  cbSVWindow::FindWatchFromProperty(wxPGProperty* prop )
+{
+    auto itr = m_RegisterWatches.begin();
+    for(; itr != m_RegisterWatches.end(); ++itr)
+    {
+        if(itr->m_property == prop)
+        {
+            watch = itr->m_watch;
+            break;
+        }
+    }
+    return itr;
+}
+
+void cbSVWindow::OnDebuggerStarted()
+{
+    wxPGProperty* root = m_pg_first_page->GetRoot();
+    size_t child_count = root->GetChildCount();
+    cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
+
+    for (size_t i = 0 ; i < child_count; i++)
+    {
+        GenerateWatchesRecursive(root->Item(i), dbg);
+    }
+}
+
+void cbSVWindow::OnItemExpand(wxPropertyGridEvent &evt)
+{
+    cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
+    wxPGProperty* prop = evt.GetProperty();;
+    bool isRegister = prop->IsKindOf(CLASSINFO(svPGRegisterProp) );
+
+    if(dbg->IsRunning() && isRegister )
+    {
+        svPGRegisterProp* reg = dynamic_cast<svPGRegisterProp*>(prop);
+        if(reg == nullptr)
+        {
+            // Error
+        }
+
+        svPGPropBase* reg_base = dynamic_cast<svPGPropBase*>(reg);
+
+        RegisterWatch watch;
+        watch.m_property = prop;
+        watch.m_watch    = dbg->AddMemoryRange( reg_base->GetAddress() , reg_base->GetSize(), reg->GetName() );
+
+        m_RegisterWatches.push_back(watch);
+    }
+
+}
+
+void cbSVWindow::OnItemCollapsed(wxPropertyGridEvent &evt)
+{
+    cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
+
+    auto itr = m_RegisterWatches.begin();
+    for(; itr != m_RegisterWatches.end() ; ++itr)
+    {
+        if ( itr->m_property == evt.GetProperty() )
+        {
+            dbg->DeleteWatch(itr->m_watch);
+            m_RegisterWatches.erase(itr);
+             break;
+        }
+    }
+}
+
+
+bool FindString(const wxString& a, const wxString& b)
 {
     for(size_t i = 0 ; i < a.length();i++)
     {
@@ -120,98 +261,60 @@ bool FindString(wxString a, wxString b)
     return false;
 }
 
-int PopulateSVDFieldPropGrid(wxPropertyGridPage *grid, wxPGProperty* parent, std::shared_ptr< SVDField >& per)
+bool FindStringRecursive( wxPGProperty* prop, const wxString& str)
 {
-
-    if((per->m_bitRange.GetWidth() == 1) && (per->m_enumerated_value.m_values.size() == 0))
+    bool child_found = false;
+    size_t child_count = prop->GetChildCount();
+    wxString label = prop->GetLabel();
+    if(FindString(label.Upper(), str.Upper()) == true)
     {
-        wxBoolProperty* field_prop = new wxBoolProperty(per->m_name);
-        field_prop->SetHelpString(per->m_description);
-        field_prop->SetAttribute(wxPG_BOOL_USE_CHECKBOX,true);
-        //field_prop->SetCell(4,per->m_description);
-        field_prop->SetValue(per->m_resetValue == 1 ? true : false);
-        if(per->m_access == SVD_ACCESS_READ)
-            field_prop->SetFlagRecursively(wxPG_PROP_READONLY, true);
-        //parent->AddPrivateChild(field_prop);
-        grid->AppendIn(parent,field_prop);
+        prop->Hide(false);
+        return true;
     }
-    else if(per->m_enumerated_value.m_values.size() != 0)
+
+    for (size_t i = 0; i < child_count; ++i)
     {
-        wxEnumProperty* enum_prop = new wxEnumProperty(per->m_name);
-        grid->AppendIn(parent,enum_prop);
-        enum_prop->SetHelpString(per->m_description);
-        //enum_prop->SetCell(4,per->m_description);
-        if(per->m_access == SVD_ACCESS_READ)
-            enum_prop->SetFlagRecursively(wxPG_PROP_READONLY, true);
-        //enum_prop->SetValue(per->m_resetValue)
-        auto value_itr = per->m_enumerated_value.m_values.begin();
-        for(;value_itr != per->m_enumerated_value.m_values.end(); ++value_itr)
+        if(FindStringRecursive(prop->Item(i), str ) == true )
         {
-            //enum_prop->AddChoice((*value_itr)->m_name + wxT("     : ") + (*value_itr)->m_description );
-            enum_prop->AppendChoice((*value_itr)->m_name + wxT("     : ") + (*value_itr)->m_description);
+             //prop->Item(i)->Hide( false );
+             child_found = true;
         }
-        //parent->AddPrivateChild(enum_prop);
-
-    }
-    else
-    {
-        wxStringProperty* field_prop = new wxStringProperty(per->m_name);
-        field_prop->SetHelpString(per->m_description);
-        //field_prop->SetCell(4,per->m_description);
-        field_prop->SetValue(wxString::Format(wxT("0x%08llx") , per->m_resetValue));
-        if(per->m_access == SVD_ACCESS_READ)
-            field_prop->SetFlagRecursively(wxPG_PROP_READONLY, true);
-        //parent->AddPrivateChild(field_prop);
-        grid->AppendIn(parent,field_prop);
+        //else
+            //prop->Item(i)->Hide( true );
     }
 
+    if(child_found == false)
+        prop->Hide(true);
+
+    return child_found;
 }
 
-
-int PopulateSVDRegisterPropGrid(wxPropertyGridPage *grid, wxPGProperty* parent, std::shared_ptr<SVDRegisterBase>& per)
+void cbSVWindow::OnSearchTimer(wxTimerEvent& event)
 {
-    wxStringProperty* reg_prop = new wxStringProperty(per->m_name,parent->GetName() + wxT(":")+per->m_name);
+    wxPGProperty* root = m_pg_first_page->GetRoot();
+    size_t child_count = root->GetChildCount();
+    wxString searchStr = m_SearchCtrl->GetValue();
 
-    std::shared_ptr<SVDRegister> reg = std::dynamic_pointer_cast<SVDRegister>(per);
-    if(reg)
+    if(searchStr == wxEmptyString)
+        return;
+
+    wxProgressDialog pd(wxT("search"),wxT("execute search"),child_count * 2);
+    int update_state = 0;
+
+    for (size_t i = 0 ; i < child_count; i++)
     {
-        reg_prop->SetHelpString(reg->m_description + wxT("\n") + reg->m_displayName);
-        //grid->Insert(parent,reg_prop);
-        grid->AppendIn(parent,reg_prop);
-        //parent->AddPrivateChild(reg_prop);
-        auto itr_field = reg->m_fields.begin();
-        int i=0;
-        for(;itr_field != reg->m_fields.end() ; ++itr_field)
-        {
-            PopulateSVDFieldPropGrid(grid,reg_prop,*itr_field);
-            i++;
-        }
+        FindStringRecursive(root->Item(i),searchStr);
+        pd.Update(update_state++);
     }
-}
 
-int PopulateSVDPherypheryPropGrid( wxPropertyGridPage *grid, SVDPeriphery& per)
-{
-    wxStringProperty* per_prop = new wxStringProperty(per.m_name);
-    grid->Append(per_prop);
-    auto itr_reg = per.m_registers.begin();
-    for(;itr_reg != per.m_registers.end() ; ++itr_reg)
+    for (size_t i = 0 ; i < child_count; i++)
     {
-        PopulateSVDRegisterPropGrid(grid,per_prop,*itr_reg);
+        root->Item(i)->Expand();
+        pd.Update(update_state++);
     }
+
+    //m_pg_first_page->ExpandAll();
 }
-
-
-void cbSVWindow::PopulateGrid()
-{
-    m_pg_first_page->Clear();
-
-    auto itr_per = m_device->m_peripherals.begin();
-    for(;itr_per != m_device->m_peripherals.end(); ++itr_per)
-    {
-        PopulateSVDPherypheryPropGrid(m_pg_first_page,*(*itr_per).get());
-    }
-}
-
 
 void cbSVWindow::OnSearchCtrl(wxCommandEvent& event)
 {
@@ -226,16 +329,12 @@ void cbSVWindow::OnSearchCtrl(wxCommandEvent& event)
            root->Item(i)->Hide( false );
 
         m_pg_first_page->ExpandAll();
+        m_searchTimer->Stop();
         return;
     }
-
-    for (size_t i = 0 ; i < child_count; i++)
+    else
     {
-       wxPGProperty* prop = root->Item(i);
-       if (FindString(prop->GetLabel(),searchStr) == false )
-           prop->Hide( true );
-       else
-           prop->Hide( false );
+        m_searchTimer->Start(500, wxTIMER_ONE_SHOT);
     }
-    m_pg_first_page->ExpandAll();
+
 }

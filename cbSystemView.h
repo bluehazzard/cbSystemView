@@ -116,6 +116,10 @@ class cbSystemView : public cbPlugin
           */
         virtual void OnRelease(bool appShutDown);
 
+        void OnDebuggerStarted(CodeBlocksEvent& evt);
+        void OnDebuggerFinished(CodeBlocksEvent& evt);
+        void OnDebuggerPaused(CodeBlocksEvent& evt);
+
 
     private:
 
