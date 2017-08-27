@@ -81,6 +81,7 @@
 				</Linker>
 				<ExtraCommands>
 					<Add after="zip -j9 $(#cb)\devel30/share/codeblocks/cbSystemView.zip manifest.xml" />
+					<Add after="zip -9 $(#cb)\devel30/share/codeblocks/cbSystemView.zip images\*" />
 					<Mode after="always" />
 				</ExtraCommands>
 			</Target>
