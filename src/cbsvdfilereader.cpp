@@ -5,6 +5,7 @@
 
 #include "tinywxuni.h"
 
+
 wxString SVDToWxString(svdAccessRight r)
 {
     switch(r)
@@ -17,7 +18,7 @@ wxString SVDToWxString(svdAccessRight r)
         case SVD_ACCESS_READ_WRITE_ONCE: return wxString(wxT("ACCESS_READ_WRITE_ONCE"));
     }
     return wxEmptyString;
-}
+};
 
 wxString SVDToWxString(svdEndianType r)
 {
@@ -30,7 +31,7 @@ wxString SVDToWxString(svdEndianType r)
         case SVD_ENDIAN_OTHER:      return wxString(wxT("ENDIAN_OTHER"));
     }
     return wxEmptyString;
-}
+};
 
 wxString SVDToWxString(svdProtectionLevel r)
 {
@@ -42,7 +43,7 @@ wxString SVDToWxString(svdProtectionLevel r)
         case SVD_PROTECTION_PRIVILEGED: return wxString(wxT("PROTECTION_PRIVILEGED"));
     }
     return wxEmptyString;
-}
+};
 
 wxString SVDToWxString(svdRegionAccessLevel r)
 {
@@ -53,7 +54,7 @@ wxString SVDToWxString(svdRegionAccessLevel r)
         case SVD_LEVE_CALLABLE:     return wxString(wxT("LEVE_CALLABLE"));
     }
     return wxEmptyString;
-}
+};
 
 wxString SVDToWxString(svdAddressBlockUsage r)
 {
@@ -65,7 +66,7 @@ wxString SVDToWxString(svdAddressBlockUsage r)
         case SVD_USAGE_RESERVED:   return wxString(wxT("USAGE_RESERVED"));
     }
     return wxEmptyString;
-}
+};
 
 wxString SVDToWxString(svdDataType r)
 {
@@ -90,7 +91,7 @@ wxString SVDToWxString(svdDataType r)
         case SVD_TYPE_INT64_T_P:    return wxString(wxT("*int64_t"));
     }
     return wxEmptyString;
-}
+};
 
 wxString SVDToWxString(svdWriteModifications r)
 {
@@ -109,7 +110,7 @@ wxString SVDToWxString(svdWriteModifications r)
         case SVD_WRITE_MODIFICATION_SET:                return wxString(wxT("MODIFICATION_SET"));
     }
     return wxEmptyString;
-}
+};
 
 wxString SVDToWxString(svdReadModifications r)
 {
@@ -123,9 +124,9 @@ wxString SVDToWxString(svdReadModifications r)
         case SVD_READ_MODIFICATION_CLEAR:           return wxString(wxT("MODIFICATION_CLEAR"));
     }
     return wxEmptyString;
-}
+};
 
-wxString SVDToWxString(svdEnumUsage r)
+wxString SVDToWxString(svdEnumUsage& r)
 {
     switch(r)
     {
@@ -135,7 +136,7 @@ wxString SVDToWxString(svdEnumUsage r)
         case SVD_ENUM_READ:         return wxString(wxT("READ"));
     }
     return wxEmptyString;
-}
+};
 
 const SVDRegisterProperties DefaultRegisterProperty = SVDRegisterProperties(0, SVD_ACCESS_READ_WRITE, wxT("n"), 0, 0);
 

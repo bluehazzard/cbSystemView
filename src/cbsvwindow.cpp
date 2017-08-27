@@ -40,8 +40,7 @@ wxBitmap LoadPNGFromResourceFile(wxString name)
 	if(file == nullptr)
         throw bad_file_execp(_("File not found:") + filename);
 	wxImage img;
-	img.LoadFile(*file->GetStream(), wxBITMAP_TYPE_ANY
-              );
+	img.LoadFile(*file->GetStream(), wxBITMAP_TYPE_ANY);
 	wxBitmap ret(img);
 	if(!ret.IsOk())
         throw bad_file_execp(_("File not loaded correctly:") + filename);
@@ -124,8 +123,8 @@ void cbSVWindow::PopulateGrid()
 {
     m_pg_first_page->Clear();
 
-    auto itr_per = m_device->m_peripherals.begin();
-    for(;itr_per != m_device->m_peripherals.end(); ++itr_per)
+    auto itr_per = m_device->GetPeriperyBegin();
+    for(;itr_per != m_device->GetPeriperyEnd(); ++itr_per)
     {
         svPGPeripheryProp* prop = new svPGPeripheryProp(*(*itr_per).get());
         m_pg_first_page->Append(prop);
@@ -155,8 +154,9 @@ void cbSVWindow::GenerateWatchesRecursive(wxPGProperty* prop, cbDebuggerPlugin *
         if(prop->IsExpanded() && watch_itr == m_RegisterWatches.end() )
         {
             RegisterWatch watch;
+            svPGRegisterProp* reg = dynamic_cast<svPGRegisterProp*>(watch_itr->m_property);
             watch.m_property = prop;
-            watch.m_watch    = dbg->AddMemoryRange( reg_base->GetAddress() , reg_base->GetSize(), reg->GetName() );
+            watch.m_watch    = dbg->AddMemoryRange( reg->GetAddress() , reg->GetSize(), reg->GetName() );
 
             m_RegisterWatches.push_back(watch);
         }
@@ -173,10 +173,10 @@ void cbSVWindow::GenerateWatchesRecursive(wxPGProperty* prop, cbDebuggerPlugin *
     }
 }
 
-bool cbSVWindow::FindWatchFromProperty(wxPGProperty* prop )
+/*bool cbSVWindow::FindWatchFromProperty(wxPGProperty* prop )
 {
     return FindWatchFromProperty(prop) == m_RegisterWatches.end();
-}
+}*/
 
 std::list<RegisterWatch>::iterator  cbSVWindow::FindWatchFromProperty(wxPGProperty* prop )
 {
@@ -185,7 +185,6 @@ std::list<RegisterWatch>::iterator  cbSVWindow::FindWatchFromProperty(wxPGProper
     {
         if(itr->m_property == prop)
         {
-            watch = itr->m_watch;
             break;
         }
     }
@@ -304,16 +303,16 @@ void cbSVWindow::OnSearchTimer(wxTimerEvent& event)
     for (size_t i = 0 ; i < child_count; i++)
     {
         FindStringRecursive(root->Item(i),searchStr);
-        pd.Update(update_state++);
+        pd.Update(update_state++, wxT("searching"));
     }
 
     for (size_t i = 0 ; i < child_count; i++)
     {
-        root->Item(i)->Expand();
-        pd.Update(update_state++);
+        root->Item(i)->SetExpanded(true);
+        pd.Update(update_state++, wxT("expanding"));
     }
 
-    //m_pg_first_page->ExpandAll();
+    m_pg_first_page->RefreshGrid();
 }
 
 void cbSVWindow::OnSearchCtrl(wxCommandEvent& event)
@@ -328,7 +327,7 @@ void cbSVWindow::OnSearchCtrl(wxCommandEvent& event)
         for (size_t i = 0 ; i < child_count; i++)
            root->Item(i)->Hide( false );
 
-        m_pg_first_page->ExpandAll();
+        //m_pg_first_page->ExpandAll();
         m_searchTimer->Stop();
         return;
     }

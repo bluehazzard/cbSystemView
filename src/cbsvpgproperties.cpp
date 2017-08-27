@@ -7,19 +7,20 @@ IMPLEMENT_ABSTRACT_CLASS(svPGPropBase, wxObject)
 
 IMPLEMENT_ABSTRACT_CLASS2(svPGPeripheryProp, wxStringProperty, svPGPropBase)
 
-svPGPeripheryProp::svPGPeripheryProp(const SVDPeriphery &per) : wxStringProperty(per.m_name, per.m_name)
+svPGPeripheryProp::svPGPeripheryProp(SVDPeriphery &per) : wxStringProperty( per.GetName(),
+                                                                                  per.GetName() )
 {
-    m_addr      = per.m_baseAddress;
-    m_baseAddr  = per.m_baseAddress;    // Base address is the periphery
+    m_addr      = per.GetBaseAddress();
+    m_baseAddr  = per.GetBaseAddress();    // Base address is the periphery
     m_offset    = 0;                    // periphery has 0 offset
     //m_mask      = 0xFFFFFFFFFFFFFFFF;
     m_size      = 0; // We have to determine the size of the register...
 
-    SetHelpString(per.m_description);
+    SetHelpString( per.GetDescription() );
 
 
-    auto itr = per.m_registers.begin();
-    for ( ; itr != per.m_registers.end(); ++itr)
+    auto itr = per.GetRegistersBegin();
+    for ( ; itr != per.GetRegistersEnd(); ++itr)
     {
         SVDRegister* reg = dynamic_cast<SVDRegister*>((*itr).get());
         if(reg == nullptr)
@@ -68,16 +69,17 @@ void svPGPeripheryProp::SetData(uint64_t data )
 }
 
 IMPLEMENT_ABSTRACT_CLASS2(svPGRegisterProp, wxStringProperty, svPGPropBase)
-svPGRegisterProp::svPGRegisterProp(const SVDRegister &reg, const SVDPeriphery &per) : wxStringProperty(reg.m_name, reg.m_name)
+svPGRegisterProp::svPGRegisterProp(const SVDRegister &reg, const SVDPeriphery &per) : wxStringProperty( reg.GetName(),
+                                                                                                        reg.GetName() )
 {
-    m_addr      = per.m_baseAddress + reg.m_addressOffset;
-    m_baseAddr  = per.m_baseAddress;    // Base address is the periphery
-    m_offset    = reg.m_addressOffset;  // periphery has 0 offset
+    m_addr      = per.GetBaseAddress() + reg.GetAddressOfset();
+    m_baseAddr  = per.GetBaseAddress();    // Base address is the periphery
+    m_offset    = reg.GetAddressOfset();  // periphery has 0 offset
     //m_mask      = 0xFFFFFFFFFFFFFFFF;
     m_size      = reg.m_size / 8; // We have to determine the size of the register...
     //ctor
 
-    SetHelpString(reg.m_description);
+    SetHelpString( reg.GetDescription() );
 
     auto itr = reg.m_fields.begin();
     for ( ; itr != reg.m_fields.end(); ++itr)
@@ -86,7 +88,7 @@ svPGRegisterProp::svPGRegisterProp(const SVDRegister &reg, const SVDPeriphery &p
         if(field == nullptr)
             continue;
 
-        if((field->m_bitRange.GetWidth() == 1) && (field->m_enumerated_value.m_values.size() == 0))
+        if((field->m_bitRange.GetWidth() == 1) && (field->m_enumerated_value.GetValuesSize() == 0))
         {
             // Flag
             svPGBitProp* prop = new svPGBitProp(*field);
@@ -94,7 +96,7 @@ svPGRegisterProp::svPGRegisterProp(const SVDRegister &reg, const SVDPeriphery &p
                 prop->SetFlagRecursively(wxPG_PROP_READONLY, true);
             AddChild(prop);
         }
-        else if(field->m_enumerated_value.m_values.size() != 0)
+        else if(field->m_enumerated_value.GetValuesSize() != 0)
         {
             // Enumeration
             svPGEnumFieldProp* prop = new svPGEnumFieldProp(*field);
@@ -161,14 +163,15 @@ void svPGRegisterProp::SetValueFromString(const wxString& str, int flags)
 
 }
 
-void svPGRegisterProp::ChildChanged(wxVariant& thisValue, int childIndex, wxVariant& childValue)  const
-{
+//void svPGRegisterProp::ChildChanged(wxVariant& thisValue, int childIndex, wxVariant& childValue)  const
+//{
 
-}
+//}
 
 IMPLEMENT_ABSTRACT_CLASS2(svPGEnumFieldProp, wxEnumProperty, svPGPropBase)
 
-svPGEnumFieldProp::svPGEnumFieldProp(const SVDField &field) : wxEnumProperty(field.m_name, field.m_name)
+svPGEnumFieldProp::svPGEnumFieldProp(SVDField &field) : wxEnumProperty(field.GetName(),
+                                                                             field.GetName() )
 {
     m_data          = field.m_resetValue;
     m_mask          = field.m_bitRange.GetMask();
@@ -178,32 +181,35 @@ svPGEnumFieldProp::svPGEnumFieldProp(const SVDField &field) : wxEnumProperty(fie
     m_resetValue    = field.m_resetValue;
     m_resetMask     = field.m_resetMask;
 
-    SetHelpString(field.m_description);
+    wxString description;
+    description << field.GetDescription() << SVDToWxString(field.m_access);
+
+    SetHelpString(description);
 
     // Find best length for value and description part
-    auto itr = field.m_enumerated_value.m_values.begin();
+    auto itr = field.m_enumerated_value.GetValuesBegin();
     size_t name_length = 0;
     size_t desc_length = 0;
-    for (; itr != field.m_enumerated_value.m_values.end(); ++itr)
+    for (; itr != field.m_enumerated_value.GetValuesEnd(); ++itr)
     {
-        name_length = std::max((*itr)->m_name.length(), name_length);
-        desc_length = std::max((*itr)->m_description.length(), desc_length);
+        name_length = std::max((*itr)->GetName().length(), name_length);
+        desc_length = std::max((*itr)->GetDescription().length(), desc_length);
     }
 
     name_length += 4;
 
-    itr = field.m_enumerated_value.m_values.begin();
-    for (; itr != field.m_enumerated_value.m_values.end(); ++itr)
+    itr = field.m_enumerated_value.GetValuesBegin();
+    for (; itr != field.m_enumerated_value.GetValuesEnd(); ++itr)
     {
-        wxString name = (*itr)->m_name;
+        wxString name = (*itr)->GetName();
         for(size_t i = name.length(); i < name_length; ++i)
             name += _(" ");
 
-        m_elements.push_back(svPGEnumFieldElement((*itr)->m_name,
-                                                  (*itr)->m_description,
-                                                  name + wxT(": ") + (*itr)->m_description,
+        m_elements.push_back( svPGEnumFieldElement((*itr)->GetName(),
+                                                  (*itr)->GetDescription(),
+                                                  name + wxT(": ") + (*itr)->GetDescription(),
                                                   -1,
-                                                  (*itr)->m_value));
+                                                  (*itr)->GetValue()) );
     }
 
      SetAttribute( wxT("TYPE"), wxT("ENUM") );
@@ -216,7 +222,11 @@ void svPGEnumFieldProp::Populate()
     auto itr = m_elements.begin();
     for (; itr != m_elements.end(); ++itr)
     {
+        #if wxCHECK_VERSION(3, 0, 0)
+        (*itr).index = AddChoice((*itr).text);
+        #else
         (*itr).index = AppendChoice((*itr).text);
+        #endif
     }
 }
 

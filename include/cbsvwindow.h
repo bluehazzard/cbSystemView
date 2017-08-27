@@ -33,7 +33,7 @@ class cbSVWindow : public wxPanel
         void OnDebuggerStarted();
 
         std::list<RegisterWatch>::iterator FindWatchFromProperty(wxPGProperty* prop);
-        bool FindWatchFromProperty(wxPGProperty* prop);
+        //bool FindWatchFromProperty(wxPGProperty* prop);
         void GenerateWatchesRecursive(wxPGProperty* prop, cbDebuggerPlugin *dbg);
 
     protected:

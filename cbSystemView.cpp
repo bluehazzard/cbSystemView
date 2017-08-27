@@ -146,3 +146,8 @@ void cbSystemView::BuildMenu(wxMenuBar* menuBar)
 
     menuBar->Append(system_view_menu, wxT("System View"));
 }
+
+cbConfigurationPanel* cbSystemView::GetProjectConfigurationPanel(wxWindow* parent, cbProject* project)
+{
+
+}

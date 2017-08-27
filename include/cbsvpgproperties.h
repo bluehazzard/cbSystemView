@@ -39,7 +39,7 @@ class svPGPeripheryProp : public wxStringProperty, public svPGPropBase
 {
         DECLARE_ABSTRACT_CLASS(svPGPeripheryProp);
     public:
-        svPGPeripheryProp(const SVDPeriphery &per);
+        svPGPeripheryProp(SVDPeriphery &per);
         virtual ~svPGPeripheryProp();
 
         virtual void SetData(uint64_t data );
@@ -59,7 +59,7 @@ class svPGRegisterProp : public wxStringProperty, public svPGPropBase
         void SetData( uint64_t data )    {};
         void Populate();
 
-        void ChildChanged(wxVariant& thisValue, int childIndex, wxVariant& childValue)  const;
+        //void ChildChanged(wxVariant& thisValue, int childIndex, wxVariant& childValue)  const;
         void SetValueFromString(const wxString& str, int flags = 0);
 
     protected:
@@ -84,7 +84,7 @@ class svPGEnumFieldProp : public wxEnumProperty, public svPGPropBase
 {
         DECLARE_ABSTRACT_CLASS(svPGEnumFieldProp);
     public:
-        svPGEnumFieldProp(const SVDField &field);
+        svPGEnumFieldProp(SVDField &field);
         virtual ~svPGEnumFieldProp()    {};
 
         void Populate();
@@ -109,10 +109,11 @@ class svPGBitProp : public wxBoolProperty, public svPGPropBase
 {
         DECLARE_ABSTRACT_CLASS(svPGBitProp);
     public:
-        svPGBitProp(const SVDField &field) : wxBoolProperty(field.m_name, field.m_name)
+        svPGBitProp(const SVDField &field) : wxBoolProperty( field.GetName(),
+                                                             field.GetName() )
         {
-             SetAttribute(wxPG_BOOL_USE_CHECKBOX,true);
-             SetHelpString(field.m_description);
+             SetAttribute( wxPG_BOOL_USE_CHECKBOX, true );
+             SetHelpString( field.GetDescription() );
              m_mask = field.m_bitRange.GetMask();
         };
         virtual ~svPGBitProp()      {};
@@ -143,9 +144,10 @@ class svPGValueProp : public wxStringProperty, public svPGPropBase
         DECLARE_ABSTRACT_CLASS(svPGValueProp);
 
     public:
-        svPGValueProp(const SVDField &field) : wxStringProperty(field.m_name, field.m_name)
+        svPGValueProp(const SVDField &field) : wxStringProperty( field.GetName(),
+                                                                 field.GetName() )
         {
-             SetHelpString(field.m_description);
+             SetHelpString( field.GetDescription() );
              m_mask = field.m_bitRange.GetMask();
              m_bitOffset = field.m_bitRange.GetOffset();
         };

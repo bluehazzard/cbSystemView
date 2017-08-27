@@ -11,14 +11,6 @@
 #include <algorithm>
 #include <memory>
 
-
-
-//wxString        ReadXMLElementWxString  (TiXmlElement* parent, const char * name, wxString def = wxEmptyString);
-//unsigned int    ReadXMLElementUInt      (TiXmlElement* parent, const char * name, unsigned int def = 0);
-//uint64_t        ReadXMLElementUint64    (TiXmlElement* parent, const char * name, uint64_t def = 0);
-//bool            ReadXMLElementBool      (TiXmlElement* parent, const char * name, bool def = false);
-
-
 enum svdAccessRight
 {
     SVD_ACCESS_ND,
@@ -152,6 +144,7 @@ public:
 
     SVDHWRevision(unsigned int r, unsigned int p) : m_r(r), m_p(p)
     {
+
     };
 
     SVDHWRevision(const char* s)
@@ -199,6 +192,16 @@ public:
     {
         return wxString() << wxT("r") << m_r << wxT("p") << m_p;
     };
+
+    unsigned int GetR()     {return m_r;};
+    unsigned int GetP()     {return m_p;};
+
+    void SetR(unsigned int r)     {m_r = r;};
+    void SetP(unsigned int p)     {m_p = p;};
+
+
+private:
+
     unsigned int m_r;
     unsigned int m_p;
 };
@@ -220,6 +223,23 @@ public:
     int ReadFromNode(TiXmlElement* node);
     int WriteToNode(TiXmlElement* node)     { return 0;};
 
+    wxString GetName()    const             {return m_name;};
+    void     SetName(const wxString& name)  {m_name = name;};
+
+    bool GetEnabled()    const              {return m_enabled;};
+    void SetEnabled(bool en = true)        {m_enabled = en;};
+
+    svd_address GetBaseAddress()    const   {return m_base;};
+    void  SetBaseAddress(svd_address base)  {m_base = base;};
+
+    svd_address GetLimit      ()    const   {return m_limit;};
+    void  SetLimit(svd_address limit)   {m_limit = limit;};
+
+    svdRegionAccessLevel    GetAccessLevel() {return m_access;};
+    void  SetAccessLevel(svdRegionAccessLevel acc) {m_access = acc;};
+
+private:
+
     bool          m_enabled;
     wxString      m_name;
     svd_address   m_base;
@@ -240,6 +260,19 @@ public:
     int ReadFromNode(TiXmlElement* node);
     int WriteToNode(TiXmlElement* node) { return 0;};
 
+    bool IsEnabled()            {return m_enabled;};
+    void SetEnabled(bool en)    {m_enabled = en;};
+
+    svdProtectionLevel GetProtectionLvl()       {return m_ProtectionWhenDisabled;};
+    void SetProtectionLvl(svdProtectionLevel lvl)       {m_ProtectionWhenDisabled = lvl;};
+
+    std::vector<SVDSAURegion>::iterator GetRegionsBegin()   {return m_regions.begin();};
+    std::vector<SVDSAURegion>::iterator GetRegionsEnd()     {return m_regions.end();};
+    size_t GetRegionsCount()                                {return m_regions.size();};
+    SVDSAURegion GetRegionsItem(size_t i)                   {return m_regions[i];};
+
+
+private:
     bool m_enabled;
     svdProtectionLevel m_ProtectionWhenDisabled;
     std::vector<SVDSAURegion> m_regions;
@@ -261,6 +294,16 @@ public:
     int WriteToNode(TiXmlElement* node) { return 0; };
 
     virtual int CalculateOffset(int offset) = 0;
+
+    unsigned int GetDim()           {return m_dim;};
+    svd_address  GetDimIncrement()  {return m_dimIncrement;};
+    wxString     GetDimName()       {return m_dimName;};
+
+    std::vector<wxString>::iterator GetDimIndexBegin()   {return m_dimIndex.begin();};
+    std::vector<wxString>::iterator GetDimIndexEnd()     {return m_dimIndex.end();};
+    size_t GGetDimIndexCount()                           {return m_dimIndex.size();};
+    wxString GetDimIndexItem(size_t i)                   {return m_dimIndex[i];};
+
 public:
     unsigned int    m_dim;
     svd_address     m_dimIncrement;
@@ -413,19 +456,30 @@ public:
 
     int CalculateOffset(int offset)         { return m_addressOffset = offset * m_dimIncrement; };
 
+    wxString GetName() const                { return m_name; };
+    void  SetName(wxString name)            { m_name = name; };
+
+    wxString GetDescription() const         { return m_description; };
+    void SetDescription(wxString desc)      { m_description = desc; };
+
+    svd_address GetAddressOfset() const     { return m_addressOffset; };
+    void SetAddressOfset(svd_address off)   { m_addressOffset = off; };
+
+
+    inline bool operator==(const SVDRegisterBase& rhs) const
+    {
+        return m_name == rhs.m_name;
+    }
+    inline bool operator==(const wxString& rhs) const
+    {
+        return m_name == rhs;
+    }
+
+protected:
     wxString m_name;
     wxString m_description;
 
     svd_address m_addressOffset;
-
-    inline bool operator==(const SVDRegisterBase& rhs)
-    {
-        return m_name == rhs.m_name;
-    }
-    inline bool operator==(const wxString& rhs)
-    {
-        return m_name == rhs;
-    }
 };
 
 
@@ -475,12 +529,12 @@ public:
     int ReadFromNode(TiXmlElement* node);
     int WriteToNode(TiXmlElement* node)     { return 0; };
 
-    unsigned int GetOffset()    { return m_BitOffset; };
-    unsigned int GetWidth()     { return m_BitWidth;  };
-    uint64_t     GetMask()      {return (static_cast<uint64_t>(-(m_BitWidth != 0)) & (static_cast<uint64_t>(-1) >> ((sizeof(uint64_t) * 8 /*CHAR_BIT*/) - m_BitWidth))) << m_BitOffset;  }    // Kudos to https://stackoverflow.com/a/28703383
-    unsigned int GetLSB()       { return m_BitOffset;};
-    unsigned int GetMSB()       { return m_BitOffset + m_BitWidth -1;};
-    wxString     GetRange()     { return wxString::Format(wxT("[%d;%d]"), GetMSB(), GetLSB()); };
+    unsigned int GetOffset() const   { return m_BitOffset; };
+    unsigned int GetWidth()  const   { return m_BitWidth;  };
+    uint64_t     GetMask()   const   {return (static_cast<uint64_t>(-(m_BitWidth != 0)) & (static_cast<uint64_t>(-1) >> ((sizeof(uint64_t) * 8 /*CHAR_BIT*/) - m_BitWidth))) << m_BitOffset;  }    // Kudos to https://stackoverflow.com/a/28703383
+    unsigned int GetLSB()    const   { return m_BitOffset;};
+    unsigned int GetMSB()    const   { return m_BitOffset + m_BitWidth -1;};
+    wxString     GetRange()  const   { return wxString::Format(wxT("[%d;%d]"), GetMSB(), GetLSB()); };
 
     void SetOffset(unsigned int off)        { m_BitOffset = off;    };
     void SetWidth(unsigned int width)       { m_BitWidth = width;   };
@@ -505,6 +559,15 @@ class SVDFieldsBase : public SVDRegisterBase
     int ReadFromNode(TiXmlElement* node);
     int WriteToNode(TiXmlElement* node)     { return 0; };
 
+    SVDWriteConstrains    GetWriteConstraint() const       { return m_writeConstraint; };
+    svdWriteModifications GetModifiedWriteValues() const   { return m_modifiedWriteValues; };
+    svdReadModifications  GetReadAction() const            { return m_readAction; };
+
+    void SetWriteConstraint(SVDWriteConstrains wc)        { m_writeConstraint = wc; };
+    void SetModifiedWriteValues(svdWriteModifications wm) { m_modifiedWriteValues = wm; };
+    void SetReadAction(svdReadModifications rm)           { m_readAction = rm; };
+
+private:
     SVDWriteConstrains      m_writeConstraint;
     svdWriteModifications   m_modifiedWriteValues;
     svdReadModifications    m_readAction;
@@ -525,6 +588,20 @@ class SVDEnumeratedValue : public SVDXMLnode
     int ReadFromNode(TiXmlElement* node);
     int WriteToNode(TiXmlElement* node)     { return 0; };
 
+    wxString GetName()                  { return m_name; };
+    void SetName(wxString name)         { m_name = name; };
+
+    wxString GetDescription()               { return m_description; };
+    void SetDescription(wxString desc)      { m_description = desc; };
+
+    bool GetDontCare()              { return m_dont_care; };
+    void SetDontCare(bool c)        { m_dont_care = c; };
+    bool GetDefault()               { return m_isDefault; };
+    void SetDefault(bool d)         { m_isDefault = d; };
+    uint64_t GetValue()             { return m_value; };
+    void  SetValue(uint64_t v)      { m_value = v; };
+
+private:
     wxString m_name;
     wxString m_description;
     bool     m_dont_care;
@@ -546,6 +623,16 @@ class SVDEnumeratedValues : public SVDXMLnode
     int ReadFromNode(TiXmlElement* node);
     int WriteToNode(TiXmlElement* node)     { return 0; };
 
+    wxString GetDerivedFrom() const     { return m_derivedFrom; };
+    wxString GetName() const            { return m_name; };
+    wxString GetHeaderEnumName() const  { return m_headerEnumName; };
+    svdEnumUsage GetUsage() const       { return m_usage; }
+
+    std::vector<std::shared_ptr<SVDEnumeratedValue>>::iterator GetValuesBegin() { return m_values.begin(); };
+    std::vector<std::shared_ptr<SVDEnumeratedValue>>::iterator GetValuesEnd()   { return m_values.end(); };
+    size_t GetValuesSize()   { return m_values.size(); };
+
+private:
     wxString m_derivedFrom;
     wxString m_name;
     wxString m_headerEnumName;
@@ -566,6 +653,8 @@ class SVDField : public SVDFieldsBase
 
     int ReadFromNode(TiXmlElement* node);
     int WriteToNode(TiXmlElement* node)     { return 0; };
+
+
 
 
     wxString    m_derivedFrom;
@@ -651,6 +740,47 @@ public:
 
     int CalculateOffset(int offset)         {return m_baseAddress = offset * m_dimIncrement; };
 
+    wxString GetName() const                  { return m_name; };
+    void SetName(wxString name)               { m_name = name; };
+
+    wxString GetDescription() const           { return m_description; };
+    void SetDescription(wxString desc)        { m_description = desc; };
+
+    wxString GetDerivedFrom() const           { return m_derivedFrom; };
+    wxString GetVersion() const               { return m_version; };
+    wxString GetAlternativePath() const       { return m_alternatePeripherial; };
+    wxString GetGroupName() const             { return m_groupName; };
+    wxString GetPrependToName() const         { return m_prependToName; };
+    wxString GetAppendToName() const          { return m_appendToName; };
+    wxString GetHeaderStructName() const      { return m_headerStructName; };
+    wxString GetDisableCondition() const      { return m_disableCondition; };
+
+    void SetDerivedFrom(wxString der)         { m_derivedFrom = der; };
+    void SetVersion(wxString ver)             { m_version = ver; };
+    void SetAlternativePath(wxString alt)     { m_alternatePeripherial = alt; };
+    void SetGroupName(wxString groupn)        { m_groupName = groupn; };
+    void SetPrependToName(wxString prepend)   { m_prependToName = prepend; };
+    void SetAppendToName(wxString append)     { m_appendToName = append; };
+    void SetHeaderStructName(wxString name)   { m_headerStructName = name; };
+    void SetDisableCondition(wxString cond)   { m_disableCondition = cond; };
+
+    svd_address GetBaseAddress() const        { return m_baseAddress; };
+    void  GetBaseAddress(svd_address addr)    { m_baseAddress = addr; };
+
+    std::vector<SVDAddressBlock>::iterator GetAddressBlocksBegin()  { return m_addressBlocks.begin(); };
+    std::vector<SVDAddressBlock>::iterator GetAddressBlocksEnd()    { return m_addressBlocks.end(); };
+    size_t GetAddressBlocksCount()                                  { return m_addressBlocks.size(); };
+
+    std::vector<SVDInterrupt>::iterator GetInterruptsBegin()  { return m_interrupts.begin(); };
+    std::vector<SVDInterrupt>::iterator GetInterruptsEnd()    { return m_interrupts.end(); };
+    size_t GetInterruptsSize()                                { return m_interrupts.size(); };
+
+    std::vector<std::shared_ptr<SVDRegisterBase>>::iterator GetRegistersBegin()  { return m_registers.begin(); };
+    std::vector<std::shared_ptr<SVDRegisterBase>>::iterator GetRegistersEnd()    { return m_registers.end(); };
+    size_t GetRegistersSize()                                { return m_registers.size(); };
+
+private:
+
     wxString    m_name;
     wxString    m_derivedFrom;
     wxString    m_version;
@@ -669,6 +799,8 @@ public:
 
 };
 
+typedef std::vector<std::shared_ptr<SVDPeriphery> > SVDPeriperyVector;
+
 class SVDDevice : public SVDRegisterProperties
 {
 public:
@@ -677,6 +809,38 @@ public:
     virtual ~SVDDevice()    {};
     int ReadFromNode(TiXmlElement* node);
     int WriteToNode(TiXmlElement* node)     { return 0; };
+
+    wxString        GetVendor()                     {return m_vendor;};
+    wxString        GetVendorID()                   {return m_vendorID;};
+    wxString        GetName()                       {return m_name;};
+    wxString        GetSeries()                     {return m_series;};
+    wxString        GetVersion()                    {return m_version;};
+    wxString        GetDescription()                {return m_description;};
+    wxString        GetLicenseText()                {return m_licenseText;};
+    wxString        GetHeaderSystemFilename()       {return m_headerSystemFilename;};
+    wxString        GetHeaderDefinitionsPrefix()    {return m_headerDefinitionsPrefix;};
+    unsigned int    GetAddressUnitBits()            {return m_AddressUnitBits;};
+    unsigned int    GetWidth()                      {return m_width;};
+
+
+    void SetVendor(wxString vendor)                         {m_vendor = vendor;};
+    void SetVendorID(wxString vendorId)                     {m_vendorID = vendorId;};
+    void SetName(wxString name)                             {m_name = name;};
+    void SetSeries(wxString series)                         {m_series = series;};
+    void SetVersion(wxString version)                       {m_version = version;};
+    void SetDescription(wxString description)               {m_description = description;};
+    void SetLicenseText(wxString text)                      {m_licenseText = text;};
+    void SetHeaderSystemFilename(wxString header)           {m_headerSystemFilename = header;};
+    void SetHeaderDefinitionsPrefix(wxString headerPrefix)  {m_headerDefinitionsPrefix = headerPrefix;};
+    void SetAddressUnitBits(unsigned int unitBits )         {m_AddressUnitBits = unitBits;};
+    void SetWidth(unsigned int setWidth)                    {m_width = setWidth;};
+
+    SVDPeriperyVector::iterator GetPeriperyBegin()              {return m_peripherals.begin();};
+    SVDPeriperyVector::iterator GetPeriperyEnd()                {return m_peripherals.end();};
+    SVDPeriperyVector::value_type GetPeriperyAtIndex(size_t i)  {return m_peripherals[i];};
+    size_t GetPeriperyCount()                                   {return m_peripherals.size();};
+
+private:
 
     wxString        m_vendor;
     wxString        m_vendorID;
@@ -691,7 +855,7 @@ public:
     unsigned int    m_width;
 
     SVDCpu          m_cpu;
-    std::vector<std::shared_ptr<SVDPeriphery> > m_peripherals;
+    SVDPeriperyVector m_peripherals;
 };
 
 class SVDFile
@@ -717,7 +881,7 @@ class cbSVDFileReader
 
 
 
-template<typename T>
+/*template<typename T>
 bool SVDConvertFromChar(const char* txt, T& type)
 {
     if (txt != 0)
@@ -726,11 +890,11 @@ bool SVDConvertFromChar(const char* txt, T& type)
         return true;
     }
     return false;
-}
+}*/
 
 
 
-template<>
+//template<>
 bool inline SVDConvertFromChar(const char* txt, svdAddressBlockUsage& type)
 {
     if (txt)
@@ -752,7 +916,7 @@ bool inline SVDConvertFromChar(const char* txt, svdAddressBlockUsage& type)
 }
 
 
-template<>
+//template<>
 bool inline SVDConvertFromChar(const char* txt, svdAccessRight& type)
 {
     if (txt)
@@ -777,7 +941,7 @@ bool inline SVDConvertFromChar(const char* txt, svdAccessRight& type)
     return false;
 }
 
-template<>
+//template<>
 bool inline SVDConvertFromChar(const char* txt, svdDataType& type)
 {
     if (txt)
@@ -824,7 +988,7 @@ bool inline SVDConvertFromChar(const char* txt, svdDataType& type)
     return false;
 }
 
-template<>
+//template<>
 bool inline SVDConvertFromChar(const char* txt, svdWriteModifications& type)
 {
     if (txt)
@@ -857,7 +1021,7 @@ bool inline SVDConvertFromChar(const char* txt, svdWriteModifications& type)
     return false;
 }
 
-template<>
+//template<>
 bool inline SVDConvertFromChar(const char* txt, svdReadModifications& type)
 {
     if (txt)
@@ -880,7 +1044,7 @@ bool inline SVDConvertFromChar(const char* txt, svdReadModifications& type)
     return false;
 }
 
-template<>
+//template<>
 bool inline SVDConvertFromChar(const char* txt, wxString& type)
 {
     if (txt)
@@ -891,7 +1055,7 @@ bool inline SVDConvertFromChar(const char* txt, wxString& type)
     return false;
 }
 
-template<>
+//template<>
 bool inline SVDConvertFromChar(const char* txt, unsigned int& type)
 {
     if (txt)
@@ -902,7 +1066,7 @@ bool inline SVDConvertFromChar(const char* txt, unsigned int& type)
     return false;
 }
 
-template<>
+//template<>
 bool inline SVDConvertFromChar(const char* txt, unsigned long& type)
 {
     if (txt)
@@ -913,7 +1077,7 @@ bool inline SVDConvertFromChar(const char* txt, unsigned long& type)
     return false;
 }
 
-template<>
+//template<>
 bool inline SVDConvertFromChar(const char* txt, uint64_t& type)
 {
     if (txt)
@@ -924,7 +1088,7 @@ bool inline SVDConvertFromChar(const char* txt, uint64_t& type)
     return false;
 }
 
-template<>
+//template<>
 bool inline SVDConvertFromChar(const char* txt, bool& type)
 {
     if (txt)
@@ -941,7 +1105,7 @@ bool inline SVDConvertFromChar(const char* txt, bool& type)
     return false;
 }
 
-template<>
+//template<>
 bool inline SVDConvertFromChar(const char* txt, svdProtectionLevel& type)
 {
     if (txt)
@@ -959,7 +1123,7 @@ bool inline SVDConvertFromChar(const char* txt, svdProtectionLevel& type)
     return false;
 }
 
-template<>
+//template<>
 bool inline SVDConvertFromChar(const char* txt, svdEnumUsage& type)
 {
     if (txt)
@@ -979,7 +1143,7 @@ bool inline SVDConvertFromChar(const char* txt, svdEnumUsage& type)
     return false;
 }
 
-template<>
+//template<>
 bool inline SVDConvertFromChar(const char* txt, svdEndianType& type)
 {
     if (txt)
@@ -1000,6 +1164,7 @@ bool inline SVDConvertFromChar(const char* txt, svdEndianType& type)
     }
     return false;
 }
+
 
 /*template<>
 bool SVDConvertFromChar(const char* txt, svdAccessRight& type)
@@ -1045,12 +1210,13 @@ bool ReadFromXMLAttribute(TiXmlElement* node, const char* name, T& type)
 template<typename T, typename A>
 int ResolveArray(T& arr, std::shared_ptr<A> node)
 {
-    if(node->m_dim <= 1)
+    if (node->m_dim <= 1)
     {
         arr.push_back(node);
         return 1;
     }
-    if(node->m_dimIndex.size() < node->m_dim && !node->m_name.Contains(wxT("[%s]")))
+    if (  node->m_dimIndex.size() < node->m_dim &&
+         !node->GetName().Contains(wxT("[%s]")) )
     {
         //ERROR:  Index does not correspond with the index naming
         return -1;
@@ -1059,7 +1225,7 @@ int ResolveArray(T& arr, std::shared_ptr<A> node)
     for(unsigned int i = 0; i < node->m_dim; i++)
     {
         std::shared_ptr<A> tmp(new A(*(node.get())));
-        tmp->m_name = wxString::Format(node->m_name, node->m_dimIndex[i].c_str());
+        tmp->SetName( wxString::Format(node->GetName(), node->m_dimIndex[i].c_str()) );
         tmp->CalculateOffset(i);
         arr.push_back(tmp);
     }
@@ -1074,7 +1240,7 @@ int ResolveDerivedFrom(T& arr, A& node, const wxString& derived_From_name)
     typename T::iterator itr;
     for(itr = arr.begin(); itr != arr.end() ; ++itr)
     {
-        if( (*itr)->m_name == derived_From_name )
+        if ( (*itr)->GetName() == derived_From_name )
             break;
     }
 
