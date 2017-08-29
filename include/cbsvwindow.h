@@ -31,10 +31,14 @@ class cbSVWindow : public wxPanel
 
         void UpdateWatches();
         void OnDebuggerStarted();
+        void SetSVDFile(const wxString& file);
+
+        void DeleteAllWatches();
 
         std::list<RegisterWatch>::iterator FindWatchFromProperty(wxPGProperty* prop);
         //bool FindWatchFromProperty(wxPGProperty* prop);
         void GenerateWatchesRecursive(wxPGProperty* prop, cbDebuggerPlugin *dbg);
+
 
     protected:
 
@@ -56,6 +60,8 @@ class cbSVWindow : public wxPanel
         wxPropertyGridManager*  m_pg_man;
         wxPropertyGridPage*     m_pg_first_page;
         wxTextCtrl*             m_SearchCtrl;
+
+        wxString                m_CurSVDFile;
 
         wxTimer*                m_searchTimer;
 

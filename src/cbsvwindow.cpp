@@ -91,7 +91,7 @@ cbSVWindow::cbSVWindow(wxWindow* parent) : wxPanel(parent, wxID_ANY, wxDefaultPo
     m_reader = new cbSVDFileReader();
     m_device = new SVDDevice();
 
-    m_reader->LoadSVDFile(wxT("ATSAM3X8E.svd"), m_device);
+    m_CurSVDFile = wxEmptyString;
 
     m_pg_first_page->SetColumnCount(4);
     m_pg_first_page->Append( new wxPropertyCategory(_T("Category per") ));
@@ -109,6 +109,34 @@ cbSVWindow::~cbSVWindow()
     //dtor
 }
 
+void cbSVWindow::DeleteAllWatches()
+{
+    cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
+    auto itr = m_RegisterWatches.begin();
+    for(; itr != m_RegisterWatches.end() ; ++itr)
+    {
+        dbg->DeleteWatch(itr->m_watch);
+        m_RegisterWatches.erase(itr);
+    }
+}
+
+void cbSVWindow::SetSVDFile(const wxString& file)
+{
+    if(m_CurSVDFile == file)
+        return;
+
+    DeleteAllWatches();
+    delete m_reader;
+    delete m_device;
+
+    m_reader = new cbSVDFileReader();
+    m_device = new SVDDevice();
+
+    m_reader->LoadSVDFile(file, m_device);
+    PopulateGrid();
+    m_CurSVDFile = file;
+}
+
 void cbSVWindow::OnModifyTree(wxCommandEvent& event)
 {
     if(event.GetId() == ID_BTN_EXPAND_TREE)
@@ -116,8 +144,6 @@ void cbSVWindow::OnModifyTree(wxCommandEvent& event)
     else if(event.GetId() == ID_BTN_COLLAPSE_TREE)
         m_pg_first_page->ExpandAll(false);
 }
-
-
 
 void cbSVWindow::PopulateGrid()
 {

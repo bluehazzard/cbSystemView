@@ -73,9 +73,41 @@ void cbSystemView::OnAttach()
 
 void cbSystemView::OnDebuggerStarted(CodeBlocksEvent& evt)
 {
-    //cbMessageBox(wxT("started"));
-    //cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
-    //m_watch = dbg->AddMemoryRange(0x0028fefe, 1024, wxT("bla"));
+
+    cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
+    cbProject* project = Manager::Get()->GetProjectManager()->GetActiveProject();
+
+    wxString build_target_name = project->GetActiveBuildTarget();
+    ProjectBuildTarget *bt = project->GetBuildTarget(build_target_name);
+
+    auto itr_pro = m_settings.find(project);
+    if(itr_pro == m_settings.end())
+    {
+        Manager::Get()->GetLogManager()->LogError(_T("cbSystemView::OnDebuggerStarted(): active project has no sv setting"));
+        evt.Skip();
+        return;
+    }
+
+    auto itr_bt = itr_pro->second.m_targetSettings.find(bt);
+    if(itr_bt == itr_pro->second.m_targetSettings.end())
+    {
+        // the current target has no settings, so fall back to project settings
+        itr_bt = itr_pro->second.m_targetSettings.find(0);
+    }
+
+    // Load the correct svd File
+    wxString svdFilePath = itr_bt->second.m_svdFilePath;
+    if(svdFilePath == wxEmptyString && itr_bt !=  itr_pro->second.m_targetSettings.find(0))
+    {
+        // Get the project SVD File path as backup if the target path is
+        // empty and we don't have already the project settings
+        svdFilePath = itr_pro->second.m_targetSettings.find(0)->second.m_svdFilePath;
+    }
+
+    Manager::Get()->GetMacrosManager()->ReplaceMacros(svdFilePath, bt);
+    Manager::Get()->GetLogManager()->Log(_T("Load SVD file: ") + svdFilePath);
+
+    m_window->SetSVDFile(svdFilePath);
 }
 
 void cbSystemView::OnDebuggerFinished(CodeBlocksEvent& evt)
@@ -85,20 +117,7 @@ void cbSystemView::OnDebuggerFinished(CodeBlocksEvent& evt)
 
 void cbSystemView::OnDebuggerPaused(CodeBlocksEvent& evt)
 {
-    //cbMessageBox(wxT("paused"));
-    /*cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
-    wxString data;
-    wxString msg = wxT("memory watch data: ");
-    m_watch->GetValue(data);
-    wxCharBuffer dd = data.To8BitData();
-    msg << wxString::Format(wxT(" size: %d "), data.length());
-    for(size_t i = 0; i < data.size(); ++i)
-    {
-        msg << wxString::Format(wxT(" 0x%x"), dd[i]);
-    }
-    dbg->Log(msg);*/
     m_window->UpdateWatches();
-
 }
 
 void cbSystemView::OnRelease(bool appShutDown)
