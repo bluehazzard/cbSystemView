@@ -40,7 +40,7 @@ wxBitmap LoadPNGFromResourceFile(wxString name)
 	if(file == nullptr)
         throw bad_file_execp(_("File not found:") + filename);
 	wxImage img;
-	img.LoadFile(*file->GetStream(), wxBITMAP_TYPE_ANY);
+	img.LoadFile(*file->GetStream(), wxBITMAP_TYPE_PNG);
 	wxBitmap ret(img);
 	if(!ret.IsOk())
         throw bad_file_execp(_("File not loaded correctly:") + filename);
