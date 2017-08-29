@@ -431,6 +431,20 @@ public:
     int ReadFromNode(TiXmlElement* node);
     int WriteToNode(TiXmlElement* node) {return 0; };
 
+    wxString GetName()              const  { return m_name; };
+    wxString GetDesc()              const  { return m_description; };
+    unsigned int   GetSize()        const  { return m_size; };
+    svdAccessRight GetAccessRight() const  { return m_access; };
+    wxString       GetProtection()  const  { return m_protection; };
+    uint64_t       GetResetValue()  const  { return m_resetValue; };
+    uint64_t       GetResetMask()   const  { return m_resetMask; };
+
+    void SetName(wxString name)     { m_name = name; };
+    void SetDesc(wxString desc)     { m_description = desc; };
+
+protected:
+    wxString        m_name;
+    wxString        m_description;
     unsigned int    m_size;
     svdAccessRight  m_access;
     wxString        m_protection;
@@ -445,8 +459,6 @@ class SVDRegisterBase : public SVDRegisterProperties, public SVDArray
 public:
     SVDRegisterBase(const SVDRegisterProperties& base) : SVDRegisterProperties(base)
     {
-        m_name          = wxEmptyString;
-        m_description   = wxEmptyString;
         m_addressOffset = 0;
     };
     virtual ~SVDRegisterBase()  {};
@@ -455,12 +467,6 @@ public:
     int WriteToNode(TiXmlElement* node)     { return 0; };
 
     int CalculateOffset(int offset)         { return m_addressOffset = offset * m_dimIncrement; };
-
-    wxString GetName() const                { return m_name; };
-    void  SetName(wxString name)            { m_name = name; };
-
-    wxString GetDescription() const         { return m_description; };
-    void SetDescription(wxString desc)      { m_description = desc; };
 
     svd_address GetAddressOfset() const     { return m_addressOffset; };
     void SetAddressOfset(svd_address off)   { m_addressOffset = off; };
@@ -476,10 +482,8 @@ public:
     }
 
 protected:
-    wxString m_name;
-    wxString m_description;
-
     svd_address m_addressOffset;
+
 };
 
 
@@ -721,10 +725,9 @@ public:
     //SVDPeriphery()     {};
     SVDPeriphery(const SVDRegisterProperties& base_prop)   : SVDRegisterProperties(base_prop)
     {
-        m_name              = wxEmptyString;
+
         m_derivedFrom       = wxEmptyString;
         m_version           = wxEmptyString;
-        m_description       = wxEmptyString;
         m_alternatePeripherial = wxEmptyString;
         m_groupName         = wxEmptyString;
         m_prependToName     = wxEmptyString;
@@ -740,11 +743,6 @@ public:
 
     int CalculateOffset(int offset)         {return m_baseAddress = offset * m_dimIncrement; };
 
-    wxString GetName() const                  { return m_name; };
-    void SetName(wxString name)               { m_name = name; };
-
-    wxString GetDescription() const           { return m_description; };
-    void SetDescription(wxString desc)        { m_description = desc; };
 
     wxString GetDerivedFrom() const           { return m_derivedFrom; };
     wxString GetVersion() const               { return m_version; };
@@ -781,10 +779,9 @@ public:
 
 private:
 
-    wxString    m_name;
+
     wxString    m_derivedFrom;
     wxString    m_version;
-    wxString    m_description;
     wxString    m_alternatePeripherial;
     wxString    m_groupName;
     wxString    m_prependToName;
@@ -812,10 +809,8 @@ public:
 
     wxString        GetVendor()                     {return m_vendor;};
     wxString        GetVendorID()                   {return m_vendorID;};
-    wxString        GetName()                       {return m_name;};
     wxString        GetSeries()                     {return m_series;};
     wxString        GetVersion()                    {return m_version;};
-    wxString        GetDescription()                {return m_description;};
     wxString        GetLicenseText()                {return m_licenseText;};
     wxString        GetHeaderSystemFilename()       {return m_headerSystemFilename;};
     wxString        GetHeaderDefinitionsPrefix()    {return m_headerDefinitionsPrefix;};
@@ -825,10 +820,8 @@ public:
 
     void SetVendor(wxString vendor)                         {m_vendor = vendor;};
     void SetVendorID(wxString vendorId)                     {m_vendorID = vendorId;};
-    void SetName(wxString name)                             {m_name = name;};
     void SetSeries(wxString series)                         {m_series = series;};
     void SetVersion(wxString version)                       {m_version = version;};
-    void SetDescription(wxString description)               {m_description = description;};
     void SetLicenseText(wxString text)                      {m_licenseText = text;};
     void SetHeaderSystemFilename(wxString header)           {m_headerSystemFilename = header;};
     void SetHeaderDefinitionsPrefix(wxString headerPrefix)  {m_headerDefinitionsPrefix = headerPrefix;};
@@ -844,10 +837,8 @@ private:
 
     wxString        m_vendor;
     wxString        m_vendorID;
-    wxString        m_name;
     wxString        m_series;
     wxString        m_version;
-    wxString        m_description;
     wxString        m_licenseText;
     wxString        m_headerSystemFilename;
     wxString        m_headerDefinitionsPrefix;

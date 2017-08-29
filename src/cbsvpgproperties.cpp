@@ -8,7 +8,8 @@ IMPLEMENT_ABSTRACT_CLASS(svPGPropBase, wxObject)
 IMPLEMENT_ABSTRACT_CLASS2(svPGPeripheryProp, wxStringProperty, svPGPropBase)
 
 svPGPeripheryProp::svPGPeripheryProp(SVDPeriphery &per) : wxStringProperty( per.GetName(),
-                                                                                  per.GetName() )
+                                                                            per.GetName() ) ,
+                                                          svPGPropBase(&per, this)
 {
     m_addr      = per.GetBaseAddress();
     m_baseAddr  = per.GetBaseAddress();    // Base address is the periphery
@@ -16,7 +17,7 @@ svPGPeripheryProp::svPGPeripheryProp(SVDPeriphery &per) : wxStringProperty( per.
     //m_mask      = 0xFFFFFFFFFFFFFFFF;
     m_size      = 0; // We have to determine the size of the register...
 
-    SetHelpString( per.GetDescription() );
+    SetHelpString( per.GetDesc() );
 
 
     auto itr = per.GetRegistersBegin();
@@ -26,7 +27,7 @@ svPGPeripheryProp::svPGPeripheryProp(SVDPeriphery &per) : wxStringProperty( per.
         if(reg == nullptr)
             continue;
 
-        m_size += reg->m_size / 8;  // Size is in bits
+        m_size += reg->GetSize() / 8;  // Size is in bits
 
         svPGRegisterProp* prop = new svPGRegisterProp(*reg, per);
         AddChild(prop);
@@ -70,16 +71,16 @@ void svPGPeripheryProp::SetData(uint64_t data )
 
 IMPLEMENT_ABSTRACT_CLASS2(svPGRegisterProp, wxStringProperty, svPGPropBase)
 svPGRegisterProp::svPGRegisterProp(const SVDRegister &reg, const SVDPeriphery &per) : wxStringProperty( reg.GetName(),
-                                                                                                        reg.GetName() )
+                                                                                                        reg.GetName() ) ,
+                                                                                      svPGPropBase(&per, this)
 {
     m_addr      = per.GetBaseAddress() + reg.GetAddressOfset();
     m_baseAddr  = per.GetBaseAddress();    // Base address is the periphery
     m_offset    = reg.GetAddressOfset();  // periphery has 0 offset
     //m_mask      = 0xFFFFFFFFFFFFFFFF;
-    m_size      = reg.m_size / 8; // We have to determine the size of the register...
+    m_size      = reg.GetSize() / 8; // We have to determine the size of the register...
     //ctor
-
-    SetHelpString( reg.GetDescription() );
+    wxString desc = reg.GetDesc();
 
     auto itr = reg.m_fields.begin();
     for ( ; itr != reg.m_fields.end(); ++itr)
@@ -88,32 +89,28 @@ svPGRegisterProp::svPGRegisterProp(const SVDRegister &reg, const SVDPeriphery &p
         if(field == nullptr)
             continue;
 
+        wxPGProperty* prop;
+
         if((field->m_bitRange.GetWidth() == 1) && (field->m_enumerated_value.GetValuesSize() == 0))
         {
             // Flag
-            svPGBitProp* prop = new svPGBitProp(*field);
-            if(field->m_access == SVD_ACCESS_READ)
-                prop->SetFlagRecursively(wxPG_PROP_READONLY, true);
-            AddChild(prop);
+            prop = new svPGBitProp(*field);
         }
         else if(field->m_enumerated_value.GetValuesSize() != 0)
         {
             // Enumeration
-            svPGEnumFieldProp* prop = new svPGEnumFieldProp(*field);
-            if(field->m_access == SVD_ACCESS_READ)
-                prop->SetFlagRecursively(wxPG_PROP_READONLY, true);
-            AddChild(prop);
+            prop = new svPGEnumFieldProp(*field);
         }
         else
         {
             // String
-            svPGValueProp* prop = new svPGValueProp(*field);
-            if(field->m_access == SVD_ACCESS_READ)
-                prop->SetFlagRecursively(wxPG_PROP_READONLY, true);
-            AddChild(prop);
+            prop = new svPGValueProp(*field);
         }
 
+        AddChild(prop);
     }
+
+    SetHelpString(desc);
 
 }
 
@@ -143,7 +140,7 @@ void svPGRegisterProp::Populate()
         }
     }
 }
-
+/*
 void svPGRegisterProp::SetValueFromString(const wxString& str, int flags)
 {
     wxCharBuffer buff = str.To8BitData();
@@ -161,7 +158,7 @@ void svPGRegisterProp::SetValueFromString(const wxString& str, int flags)
 
     SetValue(wxString::Format(wxT("0x%llx"), data ));
 
-}
+}*/
 
 //void svPGRegisterProp::ChildChanged(wxVariant& thisValue, int childIndex, wxVariant& childValue)  const
 //{
@@ -171,18 +168,19 @@ void svPGRegisterProp::SetValueFromString(const wxString& str, int flags)
 IMPLEMENT_ABSTRACT_CLASS2(svPGEnumFieldProp, wxEnumProperty, svPGPropBase)
 
 svPGEnumFieldProp::svPGEnumFieldProp(SVDField &field) : wxEnumProperty(field.GetName(),
-                                                                             field.GetName() )
+                                                                       field.GetName() ) ,
+                                                        svPGPropBase(&field, this)
 {
-    m_data          = field.m_resetValue;
+    m_data          = field.GetResetValue();
     m_mask          = field.m_bitRange.GetMask();
     m_size          = ceil(field.m_bitRange.GetWidth() / 8.0);  // Size in bytes
     m_bitSize       = field.m_bitRange.GetWidth();
     m_bitOffset     = field.m_bitRange.GetOffset();
-    m_resetValue    = field.m_resetValue;
-    m_resetMask     = field.m_resetMask;
+    m_resetValue    = field.GetResetValue();
+    m_resetMask     = field.GetResetMask();
 
     wxString description;
-    description << field.GetDescription() << SVDToWxString(field.m_access);
+    description << field.GetDesc();
 
     SetHelpString(description);
 
