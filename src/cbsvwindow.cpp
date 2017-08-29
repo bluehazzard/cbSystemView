@@ -180,11 +180,18 @@ void cbSVWindow::GenerateWatchesRecursive(wxPGProperty* prop, cbDebuggerPlugin *
         if(prop->IsExpanded() && watch_itr == m_RegisterWatches.end() )
         {
             RegisterWatch watch;
-            svPGRegisterProp* reg = dynamic_cast<svPGRegisterProp*>(watch_itr->m_property);
-            watch.m_property = prop;
-            watch.m_watch    = dbg->AddMemoryRange( reg->GetAddress() , reg->GetSize(), reg->GetName() );
+            svPGRegisterProp* reg = dynamic_cast<svPGRegisterProp*>(prop);
+            if(reg != nullptr)
+            {
+                watch.m_property = prop;
+                watch.m_watch    = dbg->AddMemoryRange( reg->GetAddress() , reg->GetSize(), reg->GetName() );
 
-            m_RegisterWatches.push_back(watch);
+                m_RegisterWatches.push_back(watch);
+            }
+            else
+            {
+                Manager::Get()->GetLogManager()->LogError(_T("cbSVWindow::GenerateWatchesRecursive: if(reg == nullptr)"));
+            }
         }
         else if(prop->IsExpanded() == false && watch_itr != m_RegisterWatches.end())
         {

@@ -140,7 +140,7 @@ void svPGRegisterProp::Populate()
         }
     }
 }
-/*
+
 void svPGRegisterProp::SetValueFromString(const wxString& str, int flags)
 {
     wxCharBuffer buff = str.To8BitData();
@@ -158,7 +158,21 @@ void svPGRegisterProp::SetValueFromString(const wxString& str, int flags)
 
     SetValue(wxString::Format(wxT("0x%llx"), data ));
 
-}*/
+}
+
+wxVariant svPGRegisterProp::ChildChanged( wxVariant& thisValue,
+                                    int childIndex,
+                                    wxVariant& childValue ) const
+{
+    long long value = thisValue.GetLongLong();
+    long long child_val = childValue.GetLongLong();
+    return wxVariant(value);    // dummy
+}
+
+void svPGRegisterProp::RefreshChildren()
+{
+
+}
 
 //void svPGRegisterProp::ChildChanged(wxVariant& thisValue, int childIndex, wxVariant& childValue)  const
 //{

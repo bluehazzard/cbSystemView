@@ -69,8 +69,15 @@ class svPGRegisterProp : public wxStringProperty, public svPGPropBase
         void SetData( uint64_t data )    {};
         void Populate();
 
+        virtual wxVariant ChildChanged( wxVariant& thisValue,
+                                    int childIndex,
+                                    wxVariant& childValue ) const;
+
         //void ChildChanged(wxVariant& thisValue, int childIndex, wxVariant& childValue)  const;
-        //void SetValueFromString(const wxString& str, int flags = 0);
+        void SetValueFromString(const wxString& str, int flags = 0);
+
+
+        virtual void RefreshChildren();
 
     protected:
 
@@ -131,7 +138,7 @@ class svPGBitProp : public wxBoolProperty, public svPGPropBase
         void SetData( uint64_t data )
         {
             cbDebuggerPlugin* dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
-            dbg->Log(wxString::Format(wxT("bit value = %d"), (data & m_mask) ));
+            //dbg->Log(wxString::Format(wxT("bit value = %d"), (data & m_mask) ));
             SetValueFromInt((data & m_mask));
 
         };

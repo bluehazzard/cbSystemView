@@ -135,6 +135,8 @@ class cbSystemView : public cbPlugin
         cbSystemViewSetting GetSettings(cbProject* project);
         void SetSettings(cbSystemViewSetting settings, cbProject* project);
 
+        cbSystemViewPerTargetSetting GetCurrentActiveSetting();
+
     protected:
         /** Any descendent plugin should override this virtual method and
           * perform any necessary initialization. This method is called by

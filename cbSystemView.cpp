@@ -71,9 +71,8 @@ void cbSystemView::OnAttach()
 
 }
 
-void cbSystemView::OnDebuggerStarted(CodeBlocksEvent& evt)
+cbSystemViewPerTargetSetting cbSystemView::GetCurrentActiveSetting()
 {
-
     cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
     cbProject* project = Manager::Get()->GetProjectManager()->GetActiveProject();
 
@@ -84,8 +83,7 @@ void cbSystemView::OnDebuggerStarted(CodeBlocksEvent& evt)
     if(itr_pro == m_settings.end())
     {
         Manager::Get()->GetLogManager()->LogError(_T("cbSystemView::OnDebuggerStarted(): active project has no sv setting"));
-        evt.Skip();
-        return;
+        return cbSystemViewPerTargetSetting();
     }
 
     auto itr_bt = itr_pro->second.m_targetSettings.find(bt);
@@ -96,18 +94,29 @@ void cbSystemView::OnDebuggerStarted(CodeBlocksEvent& evt)
     }
 
     // Load the correct svd File
-    wxString svdFilePath = itr_bt->second.m_svdFilePath;
-    if(svdFilePath == wxEmptyString && itr_bt !=  itr_pro->second.m_targetSettings.find(0))
+    return itr_bt->second;
+}
+
+void cbSystemView::OnDebuggerStarted(CodeBlocksEvent& evt)
+{
+
+    cbSystemViewPerTargetSetting settings = GetCurrentActiveSetting();
+    cbProject* project = Manager::Get()->GetProjectManager()->GetActiveProject();
+    wxString build_target_name = project->GetActiveBuildTarget();
+    ProjectBuildTarget *bt = project->GetBuildTarget(build_target_name);
+
+    wxString svdFilePath = settings.m_svdFilePath;
+
+    if(svdFilePath == wxEmptyString)
     {
-        // Get the project SVD File path as backup if the target path is
-        // empty and we don't have already the project settings
-        svdFilePath = itr_pro->second.m_targetSettings.find(0)->second.m_svdFilePath;
+        svdFilePath = m_settings[project].m_targetSettings[0].m_svdFilePath;
     }
 
     Manager::Get()->GetMacrosManager()->ReplaceMacros(svdFilePath, bt);
     Manager::Get()->GetLogManager()->Log(_T("Load SVD file: ") + svdFilePath);
 
     m_window->SetSVDFile(svdFilePath);
+    m_window->OnDebuggerStarted();
 }
 
 void cbSystemView::OnDebuggerFinished(CodeBlocksEvent& evt)
@@ -187,6 +196,22 @@ cbConfigurationPanel* cbSystemView::GetProjectConfigurationPanel(wxWindow* paren
 
 void cbSystemView::OnProjectActivated(CodeBlocksEvent& evt)
 {
+    cbSystemViewPerTargetSetting settings = GetCurrentActiveSetting();
+    cbProject* project = Manager::Get()->GetProjectManager()->GetActiveProject();
+    wxString build_target_name = project->GetActiveBuildTarget();
+    ProjectBuildTarget *bt = project->GetBuildTarget(build_target_name);
+
+    wxString svdFilePath = settings.m_svdFilePath;
+
+    if(svdFilePath == wxEmptyString)
+    {
+        svdFilePath = m_settings[project].m_targetSettings[0].m_svdFilePath;
+    }
+
+    Manager::Get()->GetMacrosManager()->ReplaceMacros(svdFilePath, bt);
+    Manager::Get()->GetLogManager()->Log(_T("Load SVD file: ") + svdFilePath);
+
+    m_window->SetSVDFile(svdFilePath);
 
 }
 
