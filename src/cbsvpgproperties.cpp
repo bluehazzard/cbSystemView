@@ -164,8 +164,8 @@ wxVariant svPGRegisterProp::ChildChanged( wxVariant& thisValue,
                                     int childIndex,
                                     wxVariant& childValue ) const
 {
-    long long value = thisValue.GetLongLong();
-    long long child_val = childValue.GetLongLong();
+    wxLongLong value = thisValue.GetLongLong();
+    wxLongLong child_val = childValue.GetLongLong();
     return wxVariant(value);    // dummy
 }
 

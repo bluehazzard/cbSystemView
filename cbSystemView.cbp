@@ -75,7 +75,7 @@
 					<Add directory="include" />
 				</Compiler>
 				<Linker>
-					<Add library="wxmsw30u" />
+					<Add library="wxmsw30ud" />
 					<Add library="codeblocks" />
 					<Add directory="$(#wx30.lib)/gcc_dll" />
 					<Add directory="$(#cb)/devel30" />
