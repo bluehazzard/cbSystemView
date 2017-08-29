@@ -56,6 +56,7 @@
 				<ExtraCommands>
 					<Add after="zip -j9 $(#cb)\devel/share/codeblocks/cbSystemView.zip manifest.xml" />
 					<Add after="zip -9 $(#cb)\devel/share/codeblocks/cbSystemView.zip images\*" />
+					<Add after="zip -j9 $(#cb)\devel/share/codeblocks/cbSystemView.zip res\*" />
 					<Mode after="always" />
 				</ExtraCommands>
 			</Target>
@@ -74,14 +75,15 @@
 					<Add directory="include" />
 				</Compiler>
 				<Linker>
-					<Add library="wxmsw30ud" />
+					<Add library="wxmsw30u" />
 					<Add library="codeblocks" />
 					<Add directory="$(#wx30.lib)/gcc_dll" />
 					<Add directory="$(#cb)/devel30" />
 				</Linker>
 				<ExtraCommands>
-					<Add after="zip -j9 $(#cb)\devel30/share/codeblocks/cbSystemView.zip manifest.xml" />
-					<Add after="zip -9 $(#cb)\devel30/share/codeblocks/cbSystemView.zip images\*" />
+					<Add after="zip -j9 $(#cb)/devel30/share/codeblocks/cbSystemView.zip manifest.xml" />
+					<Add after="zip -9 $(#cb)/devel30/share/codeblocks/cbSystemView.zip images/*" />
+					<Add after="zip -j9 $(#cb)/devel30/share/codeblocks/cbSystemView.zip res/*.xrc" />
 					<Mode after="always" />
 				</ExtraCommands>
 			</Target>
@@ -107,25 +109,34 @@
 			<Add directory="$(#cb)/include" />
 			<Add directory="$(#cb)/sdk/wxscintilla/include" />
 			<Add directory="$(#cb)/include/tinyxml" />
+			<Add directory="." />
 		</Compiler>
 		<Linker>
 			<Add option="-mthreads" />
 		</Linker>
 		<Unit filename="cbSystemView.cpp" />
 		<Unit filename="cbSystemView.h" />
+		<Unit filename="include/ProjectConfigPanel.h" />
 		<Unit filename="include/cbsvdfilereader.h" />
 		<Unit filename="include/cbsvpgproperties.h" />
 		<Unit filename="include/cbsvwindow.h" />
 		<Unit filename="manifest.xml" />
+		<Unit filename="src/ProjectConfigPanel.cpp" />
 		<Unit filename="src/cbsvdfilereader.cpp" />
 		<Unit filename="src/cbsvpgproperties.cpp" />
 		<Unit filename="src/cbsvwindow.cpp" />
+		<Unit filename="wxsmith/ProjectConfigPanel.wxs" />
 		<Extensions>
 			<code_completion />
 			<envvars />
 			<LibClang />
 			<debugger />
 			<lib_finder disable_auto="1" />
+			<wxsmith version="1">
+				<resources>
+					<wxPanel wxs="wxsmith/ProjectConfigPanel.wxs" src="src/ProjectConfigPanel.cpp" hdr="include/ProjectConfigPanel.h" xrc="res/ProjectConfig.xrc" fwddecl="0" i18n="1" name="ProjectConfigPanel" language="CPP" />
+				</resources>
+			</wxsmith>
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>

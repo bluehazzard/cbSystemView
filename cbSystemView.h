@@ -21,6 +21,45 @@
 
 #include "include/cbsvwindow.h"
 
+
+class cbSystemViewPerTargetSetting
+{
+public:
+    cbSystemViewPerTargetSetting()  {};
+    virtual ~cbSystemViewPerTargetSetting() {};
+
+    void SaveToNode(TiXmlNode* node);
+    void LoadFromNode(TiXmlNode* node);
+
+    wxString m_svdFilePath;
+
+    static const wxString PROJECT_TARGET_NAME;
+
+};
+
+class cbSystemViewSetting
+{
+public:
+    cbSystemViewSetting()
+    {
+        // Create Project setting
+        cbSystemViewPerTargetSetting pro;
+        m_targetSettings[0] = pro;
+    };
+    virtual ~cbSystemViewSetting()      {};
+
+    void SaveToNode(TiXmlNode* node, cbProject* project);
+    void LoadFromNode(TiXmlNode* node, cbProject* project);
+
+
+    cbSystemViewPerTargetSetting* GetSettingsForTarget(wxString name);
+
+public:
+
+    // Target with Address 0 is the project global setting
+    std::map<ProjectBuildTarget*,cbSystemViewPerTargetSetting> m_targetSettings;
+};
+
 class cbSystemView : public cbPlugin
 {
     public:
@@ -92,6 +131,10 @@ class cbSystemView : public cbPlugin
           * @return The plugin should return true if it needed the toolbar, false if not
           */
         virtual bool BuildToolBar(wxToolBar* toolBar){ return false; }
+
+        cbSystemViewSetting GetSettings(cbProject* project);
+        void SetSettings(cbSystemViewSetting settings, cbProject* project);
+
     protected:
         /** Any descendent plugin should override this virtual method and
           * perform any necessary initialization. This method is called by
@@ -120,12 +163,18 @@ class cbSystemView : public cbPlugin
         void OnDebuggerFinished(CodeBlocksEvent& evt);
         void OnDebuggerPaused(CodeBlocksEvent& evt);
 
+        void OnProjectActivated(CodeBlocksEvent& evt);
+
+        void OnProjectLoadingHook(cbProject* project, TiXmlElement* elem, bool loading);
 
     private:
 
         void OnWindowMenu(wxCommandEvent& event);
 
+        std::map<cbProject*,cbSystemViewSetting> m_settings;
+
         cbSVWindow* m_window;
+        int m_HookId;
 
         DECLARE_EVENT_TABLE();
 };

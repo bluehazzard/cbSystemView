@@ -1,9 +1,14 @@
 #include <sdk.h> // Code::Blocks SDK
 #include <configurationpanel.h>
 #include "cbSystemView.h"
+#include "ProjectConfigPanel.h"
 #include <debuggermanager.h>
+#include "projectloader_hooks.h"
+
 
 int ID_DEBUG_WINDOW_MENU=wxNewId();
+
+const wxString cbSystemViewPerTargetSetting::PROJECT_TARGET_NAME = wxT("#project#");
 
 // Register the plugin with Code::Blocks.
 // We are using an anonymous namespace so we don't litter the global one.
@@ -59,6 +64,11 @@ void cbSystemView::OnAttach()
     Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_FINISHED, new cbEventFunctor<cbSystemView, CodeBlocksEvent>(this, &cbSystemView::OnDebuggerFinished));
     Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_PAUSED,   new cbEventFunctor<cbSystemView, CodeBlocksEvent>(this, &cbSystemView::OnDebuggerPaused));
 
+    Manager::Get()->RegisterEventSink(cbEVT_PROJECT_ACTIVATE,   new cbEventFunctor<cbSystemView, CodeBlocksEvent>(this, &cbSystemView::OnProjectActivated));
+
+    ProjectLoaderHooks::HookFunctorBase* myhook = new ProjectLoaderHooks::HookFunctor<cbSystemView>(this, &cbSystemView::OnProjectLoadingHook);
+    m_HookId = ProjectLoaderHooks::RegisterHook(myhook);
+
 }
 
 void cbSystemView::OnDebuggerStarted(CodeBlocksEvent& evt)
@@ -98,6 +108,9 @@ void cbSystemView::OnRelease(bool appShutDown)
     // which means you must not use any of the SDK Managers
     // NOTE: after this function, the inherited member variable
     // m_IsAttached will be FALSE...
+
+    ProjectLoaderHooks::UnregisterHook(m_HookId, true);
+
     if (m_window) //remove the Shell Terminals Notebook from its dockable window and delete it
     {
         CodeBlocksDockEvent evt(cbEVT_REMOVE_DOCK_WINDOW);
@@ -149,5 +162,131 @@ void cbSystemView::BuildMenu(wxMenuBar* menuBar)
 
 cbConfigurationPanel* cbSystemView::GetProjectConfigurationPanel(wxWindow* parent, cbProject* project)
 {
+    ProjectConfigPanel* panel = new ProjectConfigPanel(parent, this, project);
+    return panel;
+}
+
+void cbSystemView::OnProjectActivated(CodeBlocksEvent& evt)
+{
 
 }
+
+void cbSystemView::OnProjectLoadingHook(cbProject* project, TiXmlElement* elem, bool loading)
+{
+    auto itr = m_settings.find(project);
+    if(loading)
+    {
+        if(itr == m_settings.end())
+            m_settings[project] = cbSystemViewSetting();
+
+        m_settings[project].LoadFromNode(elem, project);
+    }
+    else
+    {
+        if(itr == m_settings.end())
+            m_settings[project] = cbSystemViewSetting();
+
+        m_settings[project].SaveToNode(elem, project);
+    }
+
+}
+
+cbSystemViewSetting cbSystemView::GetSettings(cbProject* project)
+{
+    auto itr = m_settings.find(project);
+    if(itr == m_settings.end() )
+    {
+        m_settings[project] = cbSystemViewSetting();
+    }
+    return m_settings[project];
+}
+
+void cbSystemView::SetSettings(cbSystemViewSetting settings, cbProject* project)
+{
+    m_settings[project] = settings;
+}
+
+void cbSystemViewPerTargetSetting::SaveToNode(TiXmlNode* node)
+{
+
+    TiXmlElement* svdFileNode = node->FirstChildElement("svdFile");
+    if(svdFileNode == nullptr)   // We have not found the right node, so we create it
+        svdFileNode = node->InsertEndChild(TiXmlElement("svdFile"))->ToElement();
+
+    svdFileNode->SetAttribute("path", cbU2C(m_svdFilePath));
+}
+
+void cbSystemViewPerTargetSetting::LoadFromNode(TiXmlNode* node)
+{
+    TiXmlElement* svdFileNode = node->FirstChildElement("svdFile");
+    if(svdFileNode != nullptr)
+    {
+        m_svdFilePath = cbC2U( svdFileNode->Attribute("path") );
+    }
+}
+
+
+void cbSystemViewSetting::SaveToNode(TiXmlNode* node, cbProject* project)
+{
+    // First search for the target node with the right target name
+    TiXmlElement* conf = node->FirstChildElement("cbSystemView");
+    if (!conf)
+    {
+        conf = node->InsertEndChild(TiXmlElement("cbSystemView"))->ToElement();
+    }
+
+    for(auto itr = m_targetSettings.begin(); itr != m_targetSettings.end(); ++itr)
+    {
+        TiXmlElement* targetNode = conf->FirstChildElement("target");
+        wxString settingTargetName = itr->first == 0 ? cbSystemViewPerTargetSetting::PROJECT_TARGET_NAME : itr->first->GetTitle();
+        while(targetNode)
+        {
+            wxString targetName = cbC2U(targetNode->Attribute("name"));
+            if(targetName == settingTargetName)
+                break;
+            targetNode = targetNode->NextSiblingElement("target");
+        }
+        if(targetNode == nullptr)
+        {
+            targetNode = conf->InsertEndChild(TiXmlElement("target"))->ToElement();
+            targetNode->SetAttribute("name", cbU2C(settingTargetName));
+        }
+        itr->second.SaveToNode(targetNode);
+    }
+}
+
+void cbSystemViewSetting::LoadFromNode(TiXmlNode* node, cbProject* project)
+{
+    TiXmlElement* conf = node->FirstChildElement("cbSystemView");
+    if (conf)
+    {
+        TiXmlElement* targetNode = conf->FirstChildElement("target");
+        while(targetNode)
+        {
+            wxString targetName = cbC2U(targetNode->Attribute("name"));
+            ProjectBuildTarget* bt = 0;
+            if(targetName == cbSystemViewPerTargetSetting::PROJECT_TARGET_NAME )
+            {
+                bt = 0;
+            }
+            else
+            {
+                bt = project->GetBuildTarget(targetName);
+                if(bt == nullptr)
+                {
+                    targetNode = targetNode->NextSiblingElement("target");
+                    continue;
+                }
+            }
+
+            cbSystemViewPerTargetSetting trgSet;
+            trgSet.LoadFromNode(targetNode);
+            m_targetSettings[bt] = trgSet;
+
+            targetNode = targetNode->NextSiblingElement("target");
+        }
+    }
+}
+
+
+
