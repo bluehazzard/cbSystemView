@@ -1,6 +1,7 @@
 #include "cbsvwindow.h"
 
 #include <wx/progdlg.h>
+
 #include <debuggermanager.h>
 
 const long cbSVWindow::ID_SEARCH_CTRL       = wxNewId();
@@ -8,6 +9,13 @@ const long cbSVWindow::ID_BTN_EXPAND_TREE   = wxNewId();
 const long cbSVWindow::ID_BTN_COLLAPSE_TREE = wxNewId();
 const long cbSVWindow::ID_SEARCH_TIMER      = wxNewId();
 const long cbSVWindow::ID_PROP_GRID         = wxNewId();
+
+const long cbSVWindow::ID_MENU_VIEW_HEX     = wxNewId();
+const long cbSVWindow::ID_MENU_VIEW_BIN     = wxNewId();
+const long cbSVWindow::ID_MENU_VIEW_DEC     = wxNewId();
+const long cbSVWindow::ID_MENU_VIEW_UDEC    = wxNewId();
+const long cbSVWindow::ID_MENU_VIEW_FLOAT   = wxNewId();
+const long cbSVWindow::ID_MENU_VIEW_CHAR    = wxNewId();
 
 BEGIN_EVENT_TABLE(cbSVWindow,wxPanel)
 	//(*EventTable(CPURegistersDlg)
@@ -19,8 +27,18 @@ BEGIN_EVENT_TABLE(cbSVWindow,wxPanel)
 
 	EVT_PG_ITEM_EXPANDED(ID_PROP_GRID, cbSVWindow::OnItemExpand)
 	EVT_PG_ITEM_COLLAPSED(ID_PROP_GRID, cbSVWindow::OnItemCollapsed)
+	EVT_PG_RIGHT_CLICK(ID_PROP_GRID, cbSVWindow::OnRightClick)
 
 	EVT_TIMER( ID_SEARCH_TIMER, cbSVWindow::OnSearchTimer)
+
+	EVT_MENU(ID_MENU_VIEW_HEX  , cbSVWindow::OnContextMenu )
+	EVT_MENU(ID_MENU_VIEW_BIN  , cbSVWindow::OnContextMenu )
+	EVT_MENU(ID_MENU_VIEW_DEC  , cbSVWindow::OnContextMenu )
+	EVT_MENU(ID_MENU_VIEW_UDEC , cbSVWindow::OnContextMenu )
+	EVT_MENU(ID_MENU_VIEW_FLOAT, cbSVWindow::OnContextMenu )
+	EVT_MENU(ID_MENU_VIEW_CHAR , cbSVWindow::OnContextMenu )
+
+
 
    // EVT_PG_CHANGED(ID_CUSTOM1, CPURegistersDlg::OnPropertyChanged)
    // EVT_PG_CHANGING(ID_CUSTOM1, CPURegistersDlg::OnPropertyChanging)
@@ -83,8 +101,11 @@ cbSVWindow::cbSVWindow(wxWindow* parent) : wxPanel(parent, wxID_ANY, wxDefaultPo
 	m_SearchCtrl = new wxTextCtrl(m_pg_man->GetToolBar(), ID_SEARCH_CTRL, _(""), wxPoint(search_control_pos, 0), wxSize(150, ToolSize.GetHeight()) );
 
 
+    wxAni
 
 	toolbar->AddControl(m_SearchCtrl);
+
+
     toolbar->Realize();
     toolbar->SetInitialSize();
 
@@ -113,10 +134,10 @@ void cbSVWindow::DeleteAllWatches()
 {
     cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
     auto itr = m_RegisterWatches.begin();
-    for(; itr != m_RegisterWatches.end() ; ++itr)
+    for(; itr != m_RegisterWatches.end() ;)
     {
         dbg->DeleteWatch(itr->m_watch);
-        m_RegisterWatches.erase(itr);
+        m_RegisterWatches.erase(itr++);
     }
 }
 
@@ -140,9 +161,24 @@ void cbSVWindow::SetSVDFile(const wxString& file)
 void cbSVWindow::OnModifyTree(wxCommandEvent& event)
 {
     if(event.GetId() == ID_BTN_EXPAND_TREE)
+    {
+        // TODO (bluehazzard#1#): Clean UP
         m_pg_first_page->ExpandAll();
+        wxPGProperty* root = m_pg_first_page->GetRoot();
+        size_t child_count = root->GetChildCount();
+        cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
+
+        for (size_t i = 0 ; i < child_count; i++)
+        {
+            GenerateWatchesRecursive(root->Item(i), dbg);
+        }
+    }
     else if(event.GetId() == ID_BTN_COLLAPSE_TREE)
+    {
         m_pg_first_page->ExpandAll(false);
+        DeleteAllWatches();
+    }
+
 }
 
 void cbSVWindow::PopulateGrid()
@@ -155,36 +191,49 @@ void cbSVWindow::PopulateGrid()
         svPGPeripheryProp* prop = new svPGPeripheryProp(*(*itr_per).get());
         m_pg_first_page->Append(prop);
         prop->Populate();
-        //PopulateSVDPherypheryPropGrid(m_pg_first_page,*(*itr_per).get());
     }
 }
 
 void cbSVWindow::UpdateWatches()
 {
+    size_t wcount =  m_RegisterWatches.size();
+    wxProgressDialog *pd = nullptr;
+    if(wcount > 10)  // Arbitrary number
+        pd = new  wxProgressDialog(wxT("Update svd view"), wxT("update"),wcount);
+
+    size_t i = 0;
     auto itr = m_RegisterWatches.begin();
     for(; itr != m_RegisterWatches.end() ; ++itr)
     {
         wxString val;
         (*itr).m_watch->GetValue(val);
-        dynamic_cast<svPGRegisterProp*>((*itr).m_property)->SetValueFromString(val);
+        dynamic_cast<svPGPropBase*>((*itr).m_property)->SetDataFromBinary(val);
+        if(pd != nullptr)
+        {
+            pd->Update(i);
+            ++i;
+        }
     }
+
+    if(pd != nullptr)
+        delete pd;
 }
 
 void cbSVWindow::GenerateWatchesRecursive(wxPGProperty* prop, cbDebuggerPlugin *dbg)
 {
     size_t child_count = prop->GetChildCount();
-    bool isRegister = prop->IsKindOf(CLASSINFO(svPGRegisterProp) );
-    if (isRegister )
+    bool isPhery = prop->IsKindOf(CLASSINFO(svPGPeripheryProp) );
+    if (isPhery )
     {
         std::list<RegisterWatch>::iterator watch_itr = FindWatchFromProperty(prop);
         if(prop->IsExpanded() && watch_itr == m_RegisterWatches.end() )
         {
             RegisterWatch watch;
-            svPGRegisterProp* reg = dynamic_cast<svPGRegisterProp*>(prop);
-            if(reg != nullptr)
+            svPGPeripheryProp* per = dynamic_cast<svPGPeripheryProp*>(prop);
+            if(per != nullptr)
             {
                 watch.m_property = prop;
-                watch.m_watch    = dbg->AddMemoryRange( reg->GetAddress() , reg->GetSize(), reg->GetName() );
+                watch.m_watch    = dbg->AddMemoryRange( per->GetAddress() , per->GetSize(), wxEmptyString );
 
                 m_RegisterWatches.push_back(watch);
             }
@@ -242,19 +291,17 @@ void cbSVWindow::OnItemExpand(wxPropertyGridEvent &evt)
     wxPGProperty* prop = evt.GetProperty();;
     bool isRegister = prop->IsKindOf(CLASSINFO(svPGRegisterProp) );
 
-    if(dbg->IsRunning() && isRegister )
+    if(dbg->IsRunning() && !isRegister)
     {
-        svPGRegisterProp* reg = dynamic_cast<svPGRegisterProp*>(prop);
-        if(reg == nullptr)
+        svPGPeripheryProp* per = dynamic_cast<svPGPeripheryProp*>(prop);
+        if(per == nullptr)
         {
             // Error
         }
-
-        svPGPropBase* reg_base = dynamic_cast<svPGPropBase*>(reg);
-
+        svPGPropBase* reg_base = dynamic_cast<svPGPropBase*>(prop);
         RegisterWatch watch;
         watch.m_property = prop;
-        watch.m_watch    = dbg->AddMemoryRange( reg_base->GetAddress() , reg_base->GetSize(), reg->GetName() );
+        watch.m_watch    = dbg->AddMemoryRange( reg_base->GetAddress() , reg_base->GetSize(), wxEmptyString );
 
         m_RegisterWatches.push_back(watch);
     }
@@ -272,11 +319,77 @@ void cbSVWindow::OnItemCollapsed(wxPropertyGridEvent &evt)
         {
             dbg->DeleteWatch(itr->m_watch);
             m_RegisterWatches.erase(itr);
-             break;
+            break;
         }
     }
 }
 
+void cbSVWindow::OnRightClick(wxPropertyGridEvent &evt)
+{
+    svPGPropBase *prop = dynamic_cast<svPGPropBase*>(evt.GetProperty());
+    if (prop)
+    {
+        wxMenu m;
+        wxMenu* sub_view = new wxMenu();
+        if(prop->CanRepresent(svPGPropBase::REP_HEX))
+            sub_view->AppendRadioItem(ID_MENU_VIEW_HEX, _("Hex"));
+        if(prop->CanRepresent(svPGPropBase::REP_DEC))
+            sub_view->AppendRadioItem(ID_MENU_VIEW_DEC, _("Dec"));
+        if(prop->CanRepresent(svPGPropBase::REP_UDEC))
+            sub_view->AppendRadioItem(ID_MENU_VIEW_UDEC, _("unsigned dec"));
+        if(prop->CanRepresent(svPGPropBase::REP_BIN))
+            sub_view->AppendRadioItem(ID_MENU_VIEW_BIN, _("bin"));
+        if(prop->CanRepresent(svPGPropBase::REP_CHAR))
+            sub_view->AppendRadioItem(ID_MENU_VIEW_CHAR, _("char"));
+        if(prop->CanRepresent(svPGPropBase::REP_FLOAT))
+            sub_view->AppendRadioItem(ID_MENU_VIEW_FLOAT, _("float"));
+
+        if(prop->GetRepresentation() == svPGPropBase::REP_HEX)
+            sub_view->Check(ID_MENU_VIEW_HEX, true);
+        if(prop->GetRepresentation() == svPGPropBase::REP_DEC)
+            sub_view->Check(ID_MENU_VIEW_DEC, true);
+        if(prop->GetRepresentation() == svPGPropBase::REP_UDEC)
+            sub_view->Check(ID_MENU_VIEW_UDEC, true);
+        if(prop->GetRepresentation() == svPGPropBase::REP_BIN)
+            sub_view->Check(ID_MENU_VIEW_BIN, true);
+        if(prop->GetRepresentation() == svPGPropBase::REP_CHAR)
+            sub_view->Check(ID_MENU_VIEW_CHAR, true);
+        if(prop->GetRepresentation() == svPGPropBase::REP_FLOAT)
+            sub_view->Check(ID_MENU_VIEW_FLOAT, true);
+
+
+        m.AppendSubMenu(sub_view, _("View"));
+
+        m_curSelProp = prop;
+
+        PopupMenu(&m);
+
+    }
+}
+
+void cbSVWindow::OnContextMenu(wxCommandEvent& evt)
+{
+    long id = evt.GetId();
+
+	if ( id == ID_MENU_VIEW_HEX)
+	    m_curSelProp->SetRepresentation(svPGPropBase::REP_HEX);
+
+	else if ( id == ID_MENU_VIEW_BIN)
+        m_curSelProp->SetRepresentation(svPGPropBase::REP_BIN);
+
+	else if ( id == ID_MENU_VIEW_DEC)
+        m_curSelProp->SetRepresentation(svPGPropBase::REP_DEC);
+
+	else if ( id == ID_MENU_VIEW_UDEC)
+        m_curSelProp->SetRepresentation(svPGPropBase::REP_UDEC);
+
+	else if ( id == ID_MENU_VIEW_FLOAT)
+        m_curSelProp->SetRepresentation(svPGPropBase::REP_FLOAT);
+
+	else if ( id == ID_MENU_VIEW_CHAR)
+        m_curSelProp->SetRepresentation(svPGPropBase::REP_CHAR);
+
+}
 
 bool FindString(const wxString& a, const wxString& b)
 {

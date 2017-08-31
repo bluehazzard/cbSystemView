@@ -283,7 +283,7 @@ int SVDRegisterCluster::ReadFromNode(TiXmlElement* node)
         wxString derivedFrom;
         if (ReadFromXMLAttribute(element, "derivedFrom", derivedFrom))
         {
-            ResolveDerivedFrom(m_register, *cluster.get(),derivedFrom);
+            ResolveDerivedFrom(m_register, *cluster.get(), derivedFrom);
         }
         cluster->ReadFromNode(element);
         if (ResolveArray(m_register,cluster) < 0)
@@ -323,13 +323,7 @@ int SVDRegister::ReadFromNode(TiXmlElement* node)
     ReadFromXMLElement(node, "alternateRegister",   m_alternateRegister);
     ReadFromXMLElement(node, "dataType",            m_dataType);
 
-    /*TiXmlElement* element = node->FirstChildElement("writeConstraint");
-    if (element != nullptr)
-    {
-         m_writeConstraint.ReadFromNode(element);
-    }*/
 
-    //ReadFromXMLElement(node, "readAction",          m_readAction);
     TiXmlElement* element = node->FirstChildElement("fields");
     m_fields.clear();
     if(element)
@@ -339,10 +333,10 @@ int SVDRegister::ReadFromNode(TiXmlElement* node)
         {
             std::shared_ptr<SVDField> field = std::shared_ptr<SVDField>(new SVDField(*this));
             wxString derivedFrom;
-            if(ReadFromXMLAttribute(element,"derivedFrom",derivedFrom))
+            if(ReadFromXMLAttribute(element, "derivedFrom", derivedFrom))
             {
-                // TODO (bluehazzard#1#): This does not work, because the path has to be relative, and we do not support this... for ex. in periperhal A and registerX, derive from peripheralA.registerYY.fieldYY.
-                ResolveDerivedFrom(m_fields, *field.get(),derivedFrom);
+                // TODO (bluehazzard#1#): This does not work, because the path has to be relative, and we do not support this... for ex. in peripheral A and registerX, derive from peripheralA.registerYY.fieldYY.
+                ResolveDerivedFrom(m_fields, *field.get(), derivedFrom);
             }
             field->ReadFromNode(element);
             if(ResolveArray(m_fields,field) < 0)
@@ -481,9 +475,9 @@ int SVDEnumeratedValues::ReadFromNode(TiXmlElement* node)
     {
         std::shared_ptr<SVDEnumeratedValue> value = std::shared_ptr<SVDEnumeratedValue>(new SVDEnumeratedValue());
         wxString derivedFrom;
-        if(ReadFromXMLAttribute(element,"derivedFrom",derivedFrom))
+        if(ReadFromXMLAttribute(element, "derivedFrom", derivedFrom))
         {
-            ResolveDerivedFrom(m_values, *value.get(),derivedFrom);
+            ResolveDerivedFrom(m_values, *value.get(), derivedFrom);
         }
         value->ReadFromNode(element);
         m_values.push_back(value);
@@ -557,9 +551,9 @@ int SVDPeriphery::ReadFromNode(TiXmlElement* node)
         {
             std::shared_ptr<SVDRegisterCluster> cluster = std::shared_ptr<SVDRegisterCluster>(new SVDRegisterCluster(*this));
             wxString derivedFrom;
-            if(ReadFromXMLAttribute(element,"derivedFrom",derivedFrom))
+            if(ReadFromXMLAttribute(element, "derivedFrom", derivedFrom))
             {
-                ResolveDerivedFrom(m_registers, *cluster.get(),derivedFrom);
+                ResolveDerivedFrom(m_registers, *cluster.get(), derivedFrom);
             }
             cluster->ReadFromNode(element);
             if(ResolveArray(m_registers,cluster) < 0)
@@ -574,12 +568,12 @@ int SVDPeriphery::ReadFromNode(TiXmlElement* node)
         {
             std::shared_ptr<SVDRegister> regist = std::shared_ptr<SVDRegister>(new SVDRegister(*this));
             wxString derivedFrom;
-            if(ReadFromXMLAttribute(element,"derivedFrom",derivedFrom))
+            if(ReadFromXMLAttribute(element, "derivedFrom", derivedFrom))
             {
-                ResolveDerivedFrom(m_registers, *regist.get(),derivedFrom);
+                ResolveDerivedFrom(m_registers, *regist.get(), derivedFrom);
             }
             regist->ReadFromNode(element);
-            if(ResolveArray(m_registers,regist) < 0)
+            if(ResolveArray(m_registers, regist) < 0)
             {
                 // error resolving array
                 return -1;
@@ -631,12 +625,12 @@ int SVDDevice::ReadFromNode(TiXmlElement* node)
         {
             std::shared_ptr<SVDPeriphery>  pheri = std::shared_ptr<SVDPeriphery>(new SVDPeriphery(*this));
             wxString derivedFrom;
-            if(ReadFromXMLAttribute(peripheral,"derivedFrom",derivedFrom))
+            if(ReadFromXMLAttribute(peripheral, "derivedFrom", derivedFrom))
             {
-                ResolveDerivedFrom(m_peripherals, *pheri.get(),derivedFrom);
+                ResolveDerivedFrom(m_peripherals, *pheri.get(), derivedFrom);
             }
             pheri->ReadFromNode(peripheral);
-            if(ResolveArray(m_peripherals,pheri) < 0)
+            if(ResolveArray(m_peripherals, pheri) < 0)
             {
                 // error resolving array
             }
@@ -704,9 +698,6 @@ int cbSVDFileReader::LoadSVDFile(const wxString& path, SVDDevice* device)
     TiXmlDocument doc;
     if (!TinyXML::LoadDocument(path, &doc))
         return -1;
-
-
-    //PGDeviceProperty *device = new PGDeviceProperty();
 
     TiXmlElement* root;
     TiXmlNode* device_node;

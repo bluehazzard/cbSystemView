@@ -592,8 +592,8 @@ class SVDEnumeratedValue : public SVDXMLnode
     int ReadFromNode(TiXmlElement* node);
     int WriteToNode(TiXmlElement* node)     { return 0; };
 
-    wxString GetName()                  { return m_name; };
-    void SetName(wxString name)         { m_name = name; };
+    wxString GetName()                      { return m_name; };
+    void SetName(wxString name)             { m_name = name; };
 
     wxString GetDescription()               { return m_description; };
     void SetDescription(wxString desc)      { m_description = desc; };

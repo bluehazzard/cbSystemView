@@ -1,9 +1,12 @@
 #include <sdk.h> // Code::Blocks SDK
+#include <macrosmanager.h>
 #include <configurationpanel.h>
+#include <debuggermanager.h>
+#include <projectloader_hooks.h>
+
 #include "cbSystemView.h"
 #include "ProjectConfigPanel.h"
-#include <debuggermanager.h>
-#include "projectloader_hooks.h"
+
 
 
 int ID_DEBUG_WINDOW_MENU=wxNewId();

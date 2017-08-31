@@ -50,12 +50,22 @@ class cbSVWindow : public wxPanel
 
         void OnItemExpand(wxPropertyGridEvent& event);
         void OnItemCollapsed(wxPropertyGridEvent& event);
+        void OnRightClick(wxPropertyGridEvent &evt);
+
+        void OnContextMenu(wxCommandEvent& evt);
 
         static const long ID_SEARCH_CTRL;
         static const long ID_BTN_EXPAND_TREE;
         static const long ID_BTN_COLLAPSE_TREE;
         static const long ID_SEARCH_TIMER;
         static const long ID_PROP_GRID ;
+        static const long ID_MENU_VIEW_HEX;
+        static const long ID_MENU_VIEW_BIN;
+        static const long ID_MENU_VIEW_DEC;
+        static const long ID_MENU_VIEW_UDEC;
+        static const long ID_MENU_VIEW_FLOAT;
+        static const long ID_MENU_VIEW_CHAR;
+
 
         wxPropertyGridManager*  m_pg_man;
         wxPropertyGridPage*     m_pg_first_page;
@@ -64,6 +74,8 @@ class cbSVWindow : public wxPanel
         wxString                m_CurSVDFile;
 
         wxTimer*                m_searchTimer;
+
+        svPGPropBase*           m_curSelProp;
 
         cbSVDFileReader* m_reader;
         SVDDevice* m_device;
