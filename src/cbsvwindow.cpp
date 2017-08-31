@@ -5,6 +5,7 @@
 #include <debuggermanager.h>
 
 const long cbSVWindow::ID_SEARCH_CTRL       = wxNewId();
+const long cbSVWindow::ID_ANI_CTRL          = wxNewId();
 const long cbSVWindow::ID_BTN_EXPAND_TREE   = wxNewId();
 const long cbSVWindow::ID_BTN_COLLAPSE_TREE = wxNewId();
 const long cbSVWindow::ID_SEARCH_TIMER      = wxNewId();
@@ -54,12 +55,29 @@ wxBitmap LoadPNGFromResourceFile(wxString name)
 {
 	wxFileSystem filesystem;
 	wxString filename =  wxT("file:") + ConfigManager::GetDataFolder() + wxT("/cbSystemView.zip#zip:/") + name;
-	wxFSFile *file = filesystem.OpenFile( filename);
+	wxFSFile *file = filesystem.OpenFile( filename, wxFS_READ | wxFS_SEEKABLE );
 	if(file == nullptr)
         throw bad_file_execp(_("File not found:") + filename);
 	wxImage img;
 	img.LoadFile(*file->GetStream(), wxBITMAP_TYPE_PNG);
 	wxBitmap ret(img);
+	if(!ret.IsOk())
+        throw bad_file_execp(_("File not loaded correctly:") + filename);
+
+	return ret;
+}
+
+wxAnimation LoadGifFromResourceFile(wxString name)
+{
+	wxFileSystem filesystem;
+	wxString filename =  wxT("file:") + ConfigManager::GetDataFolder() + wxT("/cbSystemView.zip#zip:/") + name;
+	wxFSFile *file = filesystem.OpenFile( filename, wxFS_READ | wxFS_SEEKABLE);
+	if(file == nullptr)
+        throw bad_file_execp(_("File not found:") + filename);
+
+	wxAnimation ret;
+	if( ret.Load(*file->GetStream(), wxANIMATION_TYPE_GIF) == false)
+        throw bad_file_execp(_("File not loaded correctly:") + filename);
 	if(!ret.IsOk())
         throw bad_file_execp(_("File not loaded correctly:") + filename);
 
@@ -86,24 +104,36 @@ cbSVWindow::cbSVWindow(wxWindow* parent) : wxPanel(parent, wxID_ANY, wxDefaultPo
     wxToolBar* toolbar = m_pg_man->GetToolBar();
     toolbar->SetToolBitmapSize(wxSize(16,16));
 
+    wxBitmap ok_image;
+
     try
 	{
         toolbar->AddTool(ID_BTN_EXPAND_TREE,    _("Expand all nodes"),   LoadPNGFromResourceFile(wxT("images/expand_16x16.png")) );
         toolbar->AddTool(ID_BTN_COLLAPSE_TREE,  _("Collapse all nodes"), LoadPNGFromResourceFile(wxT("images/collapse_16x16.png")) );
 
-	} catch (bad_file_execp e)
-	{
-        Manager::Get()->GetLogManager()->LogError(_("cbSystemView: ") + e.m_msg);
-	}
 
 	wxSize ToolSize = toolbar->GetToolSize();
 	unsigned int search_control_pos = ToolSize.GetWidth() * toolbar->GetToolsCount() + 10;
 	m_SearchCtrl = new wxTextCtrl(m_pg_man->GetToolBar(), ID_SEARCH_CTRL, _(""), wxPoint(search_control_pos, 0), wxSize(150, ToolSize.GetHeight()) );
 
 
-    wxAni
+    search_control_pos = m_SearchCtrl->GetPosition().x + m_SearchCtrl->GetSize().GetWidth() + 10;
+    m_anictrl = new wxAnimationCtrl(m_pg_man->GetToolBar(), ID_ANI_CTRL, wxNullAnimation, wxPoint(search_control_pos,0), wxDefaultSize, wxAC_NO_AUTORESIZE );
+
+    ok_image = LoadPNGFromResourceFile(wxT("images/ok_16x16.png"));
+
+    m_anictrl->SetAnimation(LoadGifFromResourceFile(wxT("images/throbber_16x16.gif")));
+
+    } catch (bad_file_execp e)
+	{
+        Manager::Get()->GetLogManager()->LogError(_("cbSystemView: ") + e.m_msg);
+	}
+
 
 	toolbar->AddControl(m_SearchCtrl);
+	toolbar->AddControl(m_anictrl);
+
+    m_anictrl->SetInactiveBitmap(ok_image);
 
 
     toolbar->Realize();
@@ -198,6 +228,9 @@ void cbSVWindow::UpdateWatches()
 {
     size_t wcount =  m_RegisterWatches.size();
     wxProgressDialog *pd = nullptr;
+
+    UpdateWorkingStat(WORKING_STAT_UPDATING);
+
     if(wcount > 10)  // Arbitrary number
         pd = new  wxProgressDialog(wxT("Update svd view"), wxT("update"),wcount);
 
@@ -217,10 +250,14 @@ void cbSVWindow::UpdateWatches()
 
     if(pd != nullptr)
         delete pd;
+
+    UpdateWorkingStat(WORKING_STAT_UPDATING, false);
 }
 
 void cbSVWindow::GenerateWatchesRecursive(wxPGProperty* prop, cbDebuggerPlugin *dbg)
 {
+    UpdateWorkingStat(WORKING_STAT_UPDATING);
+
     size_t child_count = prop->GetChildCount();
     bool isPhery = prop->IsKindOf(CLASSINFO(svPGPeripheryProp) );
     if (isPhery )
@@ -293,6 +330,7 @@ void cbSVWindow::OnItemExpand(wxPropertyGridEvent &evt)
 
     if(dbg->IsRunning() && !isRegister)
     {
+        UpdateWorkingStat(WORKING_STAT_UPDATING);
         svPGPeripheryProp* per = dynamic_cast<svPGPeripheryProp*>(prop);
         if(per == nullptr)
         {
@@ -443,6 +481,8 @@ void cbSVWindow::OnSearchTimer(wxTimerEvent& event)
     if(searchStr == wxEmptyString)
         return;
 
+    UpdateWorkingStat(WORKING_STAT_SEARCHING);
+
     wxProgressDialog pd(wxT("search"),wxT("execute search"),child_count * 2);
     int update_state = 0;
 
@@ -459,6 +499,7 @@ void cbSVWindow::OnSearchTimer(wxTimerEvent& event)
     }
 
     m_pg_first_page->RefreshGrid();
+    UpdateWorkingStat(WORKING_STAT_SEARCHING, false);
 }
 
 void cbSVWindow::OnSearchCtrl(wxCommandEvent& event)

@@ -10,8 +10,11 @@
 
 #include <wx/process.h>
 #include <wx/aui/aui.h>
-#include <sdk.h>
 #include <wx/propgrid/manager.h>
+#include <wx/animate.h>
+
+#include <sdk.h>
+
 #include "cbsvdfilereader.h"
 #include "cbsvpgproperties.h"
 
@@ -55,6 +58,7 @@ class cbSVWindow : public wxPanel
         void OnContextMenu(wxCommandEvent& evt);
 
         static const long ID_SEARCH_CTRL;
+        static const long ID_ANI_CTRL;
         static const long ID_BTN_EXPAND_TREE;
         static const long ID_BTN_COLLAPSE_TREE;
         static const long ID_SEARCH_TIMER;
@@ -66,10 +70,41 @@ class cbSVWindow : public wxPanel
         static const long ID_MENU_VIEW_FLOAT;
         static const long ID_MENU_VIEW_CHAR;
 
+        enum working_stat
+        {
+            WORKING_STAT_SEARCHING,
+            WORKING_STAT_UPDATING,
+            WORKING_STAT_MAX
+        };
+
+
+        void UpdateWorkingStat(working_stat stat, bool start = true)
+        {
+            if(stat == WORKING_STAT_MAX)
+            return;
+
+            if(start)
+                m_working_stat.set(stat);
+            else
+                m_working_stat.reset(stat);
+
+            if(m_working_stat.any())
+            {
+                if(!m_anictrl->IsPlaying())
+                    m_anictrl->Play();
+            }
+            else
+                m_anictrl->Stop();
+        }
+
+
+        std::bitset<WORKING_STAT_MAX>   m_working_stat;
+
 
         wxPropertyGridManager*  m_pg_man;
         wxPropertyGridPage*     m_pg_first_page;
         wxTextCtrl*             m_SearchCtrl;
+        wxAnimationCtrl*        m_anictrl;
 
         wxString                m_CurSVDFile;
 
