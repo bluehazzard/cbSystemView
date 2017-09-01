@@ -107,12 +107,12 @@ cbSVWindow::cbSVWindow(wxWindow* parent) : wxPanel(parent, wxID_ANY, wxDefaultPo
     wxToolBar* toolbar = m_pg_man->GetToolBar();
     toolbar->SetToolBitmapSize(wxSize(16,16));
 
-    wxBitmap ok_image;
+    wxBitmap okImg;
 
     try
 	{
-        toolbar->AddTool(ID_BTN_EXPAND_TREE,    _("Expand all nodes"),   LoadPNGFromResourceFile(wxT("images/expand_16x16.png")) );
-        toolbar->AddTool(ID_BTN_COLLAPSE_TREE,  _("Collapse all nodes"), LoadPNGFromResourceFile(wxT("images/collapse_16x16.png")) );
+    toolbar->AddTool(ID_BTN_EXPAND_TREE,    _("Expand all nodes"),   LoadPNGFromResourceFile(wxT("images/expand_16x16.png")) );
+    toolbar->AddTool(ID_BTN_COLLAPSE_TREE,  _("Collapse all nodes"), LoadPNGFromResourceFile(wxT("images/collapse_16x16.png")) );
 
 
 	wxSize ToolSize = toolbar->GetToolSize();
@@ -123,7 +123,7 @@ cbSVWindow::cbSVWindow(wxWindow* parent) : wxPanel(parent, wxID_ANY, wxDefaultPo
     search_control_pos = m_SearchCtrl->GetPosition().x + m_SearchCtrl->GetSize().GetWidth() + 10;
     m_anictrl = new wxAnimationCtrl(m_pg_man->GetToolBar(), ID_ANI_CTRL, wxNullAnimation, wxPoint(search_control_pos,0), wxSize(ToolSize.GetWidth(), ToolSize.GetHeight()), wxAC_NO_AUTORESIZE );
 
-    ok_image = LoadPNGFromResourceFile(wxT("images/ok_16x16.png"));
+    okImg = LoadPNGFromResourceFile(wxT("images/ok_16x16.png"));
 
     m_anictrl->SetAnimation(LoadGifFromResourceFile(wxT("images/throbber_16x16.gif")));
 
@@ -136,7 +136,7 @@ cbSVWindow::cbSVWindow(wxWindow* parent) : wxPanel(parent, wxID_ANY, wxDefaultPo
 	toolbar->AddControl(m_SearchCtrl);
 	toolbar->AddControl(m_anictrl);
 
-    m_anictrl->SetInactiveBitmap(ok_image);
+    m_anictrl->SetInactiveBitmap(okImg);
 
 
     toolbar->Realize();
@@ -160,7 +160,6 @@ cbSVWindow::~cbSVWindow()
     delete m_reader;
     delete m_device;
     delete m_searchTimer;
-    //dtor
 }
 
 void cbSVWindow::DeleteAllWatches()
@@ -279,7 +278,7 @@ void cbSVWindow::GenerateWatchesRecursive(wxPGProperty* prop, cbDebuggerPlugin *
             }
             else
             {
-                Manager::Get()->GetLogManager()->LogError(_T("cbSVWindow::GenerateWatchesRecursive: if(reg == nullptr)"));
+                Manager::Get()->GetLogManager()->LogError(_T("cbSVWindow::GenerateWatchesRecursive: if(per == nullptr)"));
             }
         }
         else if(prop->IsExpanded() == false && watch_itr != m_RegisterWatches.end())
@@ -294,11 +293,6 @@ void cbSVWindow::GenerateWatchesRecursive(wxPGProperty* prop, cbDebuggerPlugin *
         GenerateWatchesRecursive(prop->Item(i), dbg);
     }
 }
-
-/*bool cbSVWindow::FindWatchFromProperty(wxPGProperty* prop )
-{
-    return FindWatchFromProperty(prop) == m_RegisterWatches.end();
-}*/
 
 std::list<RegisterWatch>::iterator  cbSVWindow::FindWatchFromProperty(wxPGProperty* prop )
 {
@@ -329,20 +323,21 @@ void cbSVWindow::OnItemExpand(wxPropertyGridEvent &evt)
 {
     cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
     wxPGProperty* prop = evt.GetProperty();;
-    bool isRegister = prop->IsKindOf(CLASSINFO(svPGRegisterProp) );
 
-    if(dbg->IsRunning() && !isRegister)
+    bool isPeriphery = prop->IsKindOf(CLASSINFO(svPGPeripheryProp) );
+    if(dbg->IsRunning() && isPeriphery)
     {
         UpdateWorkingStat(WORKING_STAT_UPDATING);
-        svPGPeripheryProp* per = dynamic_cast<svPGPeripheryProp*>(prop);
-        if(per == nullptr)
+        svPGPropBase* regBase = dynamic_cast<svPGPropBase*>(prop);
+        if(regBase == nullptr)
         {
-            // Error
+            Manager::Get()->GetLogManager()->LogError(_T("cbSVWindow::GenerateWatchesRecursive: if(regBase == nullptr)"));
+            return;
         }
-        svPGPropBase* reg_base = dynamic_cast<svPGPropBase*>(prop);
+
         RegisterWatch watch;
         watch.m_property = prop;
-        watch.m_watch    = dbg->AddMemoryRange( reg_base->GetAddress() , reg_base->GetSize(), wxEmptyString );
+        watch.m_watch    = dbg->AddMemoryRange( regBase->GetAddress() , regBase->GetSize(), wxEmptyString );
 
         m_RegisterWatches.push_back(watch);
     }
@@ -360,7 +355,7 @@ void cbSVWindow::OnItemCollapsed(wxPropertyGridEvent &evt)
         {
             dbg->DeleteWatch(itr->m_watch);
             m_RegisterWatches.erase(itr);
-            break;
+            return;
         }
     }
 }
@@ -461,12 +456,7 @@ bool FindStringRecursive( wxPGProperty* prop, const wxString& str)
     for (size_t i = 0; i < child_count; ++i)
     {
         if(FindStringRecursive(prop->Item(i), str ) == true )
-        {
-             //prop->Item(i)->Hide( false );
              child_found = true;
-        }
-        //else
-            //prop->Item(i)->Hide( true );
     }
 
     if(child_found == false)
@@ -517,7 +507,6 @@ void cbSVWindow::OnSearchCtrl(wxCommandEvent& event)
         for (size_t i = 0 ; i < child_count; i++)
            root->Item(i)->Hide( false );
 
-        //m_pg_first_page->ExpandAll();
         m_searchTimer->Stop();
         return;
     }
