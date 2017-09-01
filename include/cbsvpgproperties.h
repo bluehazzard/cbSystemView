@@ -310,6 +310,8 @@ class svPGValueProp : public wxStringProperty, public svPGPropBase
             SetHelpString( field.GetDesc() );
             m_mask = field.m_bitRange.GetMask();
             m_bitOffset = field.m_bitRange.GetOffset();
+            m_bitSize = field.m_bitRange.GetWidth();
+            m_size = field.GetSize() / 8;
 
             m_rep = REP_HEX;
 
