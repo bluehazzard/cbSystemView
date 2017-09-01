@@ -13,6 +13,7 @@
 #include <wx/aui/aui.h>
 #include <wx/propgrid/manager.h>
 #include <wx/animate.h>
+#include <wx/propgrid/property.h>
 
 #include <sdk.h>
 
@@ -38,6 +39,7 @@ class cbSVWindow : public wxPanel
         void SetSVDFile(const wxString& file);
 
         void DeleteAllWatches();
+        void DeleteWatch(wxPGProperty* prop);
 
         std::list<RegisterWatch>::iterator FindWatchFromProperty(wxPGProperty* prop);
         //bool FindWatchFromProperty(wxPGProperty* prop);
@@ -70,6 +72,9 @@ class cbSVWindow : public wxPanel
         static const long ID_MENU_VIEW_UDEC;
         static const long ID_MENU_VIEW_FLOAT;
         static const long ID_MENU_VIEW_CHAR;
+
+        static const long ID_MENU_COLLAPSE;
+
 
         enum working_stat
         {
@@ -111,7 +116,7 @@ class cbSVWindow : public wxPanel
 
         wxTimer*                m_searchTimer;
 
-        svPGPropBase*           m_curSelProp;
+        wxPGProperty*           m_curSelProp;
 
         cbSVDFileReader* m_reader;
         SVDDevice* m_device;

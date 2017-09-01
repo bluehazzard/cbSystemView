@@ -21,6 +21,8 @@ const long cbSVWindow::ID_MENU_VIEW_UDEC    = wxNewId();
 const long cbSVWindow::ID_MENU_VIEW_FLOAT   = wxNewId();
 const long cbSVWindow::ID_MENU_VIEW_CHAR    = wxNewId();
 
+const long cbSVWindow::ID_MENU_COLLAPSE    = wxNewId();
+
 BEGIN_EVENT_TABLE(cbSVWindow,wxPanel)
 	//(*EventTable(CPURegistersDlg)
 	//*)
@@ -42,7 +44,7 @@ BEGIN_EVENT_TABLE(cbSVWindow,wxPanel)
 	EVT_MENU(ID_MENU_VIEW_FLOAT, cbSVWindow::OnContextMenu )
 	EVT_MENU(ID_MENU_VIEW_CHAR , cbSVWindow::OnContextMenu )
 
-
+	EVT_MENU(ID_MENU_COLLAPSE,  cbSVWindow::OnContextMenu )
 
    // EVT_PG_CHANGED(ID_CUSTOM1, CPURegistersDlg::OnPropertyChanged)
    // EVT_PG_CHANGING(ID_CUSTOM1, CPURegistersDlg::OnPropertyChanging)
@@ -153,6 +155,8 @@ cbSVWindow::cbSVWindow(wxWindow* parent) : wxPanel(parent, wxID_ANY, wxDefaultPo
     m_searchTimer = new wxTimer(this, ID_SEARCH_TIMER);
 
     PopulateGrid();
+
+    m_pg_first_page->GetGrid()->CenterSplitter();
 }
 
 cbSVWindow::~cbSVWindow()
@@ -170,6 +174,17 @@ void cbSVWindow::DeleteAllWatches()
     {
         dbg->DeleteWatch(itr->m_watch);
         m_RegisterWatches.erase(itr++);
+    }
+}
+
+void cbSVWindow::DeleteWatch(wxPGProperty* prop)
+{
+    std::list<RegisterWatch>::iterator watchItr = FindWatchFromProperty(prop);
+    if(watchItr != m_RegisterWatches.end() )
+    {
+        cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
+        dbg->DeleteWatch(watchItr->m_watch);
+        m_RegisterWatches.erase(watchItr);
     }
 }
 
@@ -296,6 +311,9 @@ void cbSVWindow::GenerateWatchesRecursive(wxPGProperty* prop, cbDebuggerPlugin *
 
 std::list<RegisterWatch>::iterator  cbSVWindow::FindWatchFromProperty(wxPGProperty* prop )
 {
+    if(prop == nullptr)
+        return m_RegisterWatches.end();
+
     auto itr = m_RegisterWatches.begin();
     for(; itr != m_RegisterWatches.end(); ++itr)
     {
@@ -363,10 +381,12 @@ void cbSVWindow::OnItemCollapsed(wxPropertyGridEvent &evt)
 void cbSVWindow::OnRightClick(wxPropertyGridEvent &evt)
 {
     svPGPropBase *prop = dynamic_cast<svPGPropBase*>(evt.GetProperty());
+    m_curSelProp = evt.GetProperty();
+    wxMenu m;
+    wxMenu* sub_view = nullptr;
     if (prop)
     {
-        wxMenu m;
-        wxMenu* sub_view = new wxMenu();
+        sub_view = new wxMenu();
         if(prop->CanRepresent(svPGPropBase::REP_HEX))
             sub_view->AppendRadioItem(ID_MENU_VIEW_HEX, _("Hex"));
         if(prop->CanRepresent(svPGPropBase::REP_DEC))
@@ -393,37 +413,54 @@ void cbSVWindow::OnRightClick(wxPropertyGridEvent &evt)
         if(prop->GetRepresentation() == svPGPropBase::REP_FLOAT)
             sub_view->Check(ID_MENU_VIEW_FLOAT, true);
 
+    }
 
+    m.Append(ID_MENU_COLLAPSE, _("Collapse parent"));
+    if(sub_view != nullptr )
         m.AppendSubMenu(sub_view, _("View"));
 
-        m_curSelProp = prop;
-
-        PopupMenu(&m);
-
-    }
+    PopupMenu(&m);
 }
 
 void cbSVWindow::OnContextMenu(wxCommandEvent& evt)
 {
     long id = evt.GetId();
+    svPGPropBase *propBase = dynamic_cast<svPGPropBase*>(m_curSelProp);
+
+    if (id == ID_MENU_COLLAPSE)
+    {
+        wxPGProperty* parent = 	m_curSelProp->GetParent();
+        if(parent)
+        {
+            parent->SetExpanded(false);
+            DeleteWatch(parent);
+            m_pg_first_page->RefreshGrid();
+            m_pg_first_page->GetGrid()->EnsureVisible(parent);
+        }
+
+        return;
+    }
+
+    if(propBase == nullptr)
+        return;
 
 	if ( id == ID_MENU_VIEW_HEX)
-	    m_curSelProp->SetRepresentation(svPGPropBase::REP_HEX);
+	    propBase->SetRepresentation(svPGPropBase::REP_HEX);
 
 	else if ( id == ID_MENU_VIEW_BIN)
-        m_curSelProp->SetRepresentation(svPGPropBase::REP_BIN);
+        propBase->SetRepresentation(svPGPropBase::REP_BIN);
 
 	else if ( id == ID_MENU_VIEW_DEC)
-        m_curSelProp->SetRepresentation(svPGPropBase::REP_DEC);
+        propBase->SetRepresentation(svPGPropBase::REP_DEC);
 
 	else if ( id == ID_MENU_VIEW_UDEC)
-        m_curSelProp->SetRepresentation(svPGPropBase::REP_UDEC);
+        propBase->SetRepresentation(svPGPropBase::REP_UDEC);
 
 	else if ( id == ID_MENU_VIEW_FLOAT)
-        m_curSelProp->SetRepresentation(svPGPropBase::REP_FLOAT);
+        propBase->SetRepresentation(svPGPropBase::REP_FLOAT);
 
 	else if ( id == ID_MENU_VIEW_CHAR)
-        m_curSelProp->SetRepresentation(svPGPropBase::REP_CHAR);
+        propBase->SetRepresentation(svPGPropBase::REP_CHAR);
 
 }
 
