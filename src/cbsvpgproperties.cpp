@@ -1,6 +1,8 @@
 #include "cbsvpgproperties.h"
 #include <wx/object.h>
+
 #include <cbcolourmanager.h>
+#include <logmanager.h>
 
 class svPGPropBase;
 

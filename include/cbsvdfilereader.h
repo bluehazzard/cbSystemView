@@ -10,6 +10,7 @@
 #include <wx/string.h>
 #include <algorithm>
 #include <memory>
+#include <globals.h>
 
 enum svdAccessRight
 {
@@ -125,7 +126,7 @@ enum svdEnumUsage
 
 wxString SVDToWxString(svdEnumUsage r);
 
-typedef unsigned long svd_address;
+typedef uint64_t svd_address;
 
 class SVDXMLnode
 {
@@ -1058,6 +1059,7 @@ bool inline SVDConvertFromChar(const char* txt, unsigned int& type)
 }
 
 //template<>
+/*
 bool inline SVDConvertFromChar(const char* txt, unsigned long& type)
 {
     if (txt)
@@ -1067,7 +1069,7 @@ bool inline SVDConvertFromChar(const char* txt, unsigned long& type)
     }
     return false;
 }
-
+*/
 //template<>
 bool inline SVDConvertFromChar(const char* txt, uint64_t& type)
 {

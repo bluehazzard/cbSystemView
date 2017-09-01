@@ -7,10 +7,12 @@
 #include <wx/button.h>
 #include <wx/choice.h>
 #include <wx/checkbox.h>
+
 #include <cbproject.h>
 #include <editpathdlg.h>
 #include <manager.h>
 #include <globals.h>
+#include <logmanager.h>
 
 //(*InternalHeaders(ProjectConfigPanel)
 #include <wx/xrc/xmlres.h>

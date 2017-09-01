@@ -2,6 +2,7 @@
 #include <macrosmanager.h>
 #include <configurationpanel.h>
 #include <debuggermanager.h>
+#include <logmanager.h>
 #include <projectloader_hooks.h>
 
 #include "cbSystemView.h"

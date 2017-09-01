@@ -51,8 +51,8 @@
 				</Linker>
 				<ExtraCommands>
 					<Add after="zip -j9 $(#cb)/devel/share/codeblocks/cbSystemView.zip manifest.xml" />
-					<Add after="zip -9 $(#cb)\devel/share/codeblocks/cbSystemView.zip images\*" />
-					<Add after="zip -j9 $(#cb)\devel/share/codeblocks/cbSystemView.zip res\*" />
+					<Add after="zip -9  $(#cb)/devel/share/codeblocks/cbSystemView.zip images/*" />
+					<Add after="zip -j9 $(#cb)/devel/share/codeblocks/cbSystemView.zip res/*" />
 					<Mode after="always" />
 				</ExtraCommands>
 			</Target>

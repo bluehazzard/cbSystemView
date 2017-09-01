@@ -1,8 +1,11 @@
 #include "cbsvwindow.h"
 
 #include <wx/progdlg.h>
+#include <wx/filesys.h>
 
 #include <debuggermanager.h>
+#include <logmanager.h>
+#include <cbplugin.h>
 
 const long cbSVWindow::ID_SEARCH_CTRL       = wxNewId();
 const long cbSVWindow::ID_ANI_CTRL          = wxNewId();
@@ -118,7 +121,7 @@ cbSVWindow::cbSVWindow(wxWindow* parent) : wxPanel(parent, wxID_ANY, wxDefaultPo
 
 
     search_control_pos = m_SearchCtrl->GetPosition().x + m_SearchCtrl->GetSize().GetWidth() + 10;
-    m_anictrl = new wxAnimationCtrl(m_pg_man->GetToolBar(), ID_ANI_CTRL, wxNullAnimation, wxPoint(search_control_pos,0), wxDefaultSize, wxAC_NO_AUTORESIZE );
+    m_anictrl = new wxAnimationCtrl(m_pg_man->GetToolBar(), ID_ANI_CTRL, wxNullAnimation, wxPoint(search_control_pos,0), wxSize(ToolSize.GetWidth(), ToolSize.GetHeight()), wxAC_NO_AUTORESIZE );
 
     ok_image = LoadPNGFromResourceFile(wxT("images/ok_16x16.png"));
 
