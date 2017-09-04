@@ -203,6 +203,7 @@ class svPGRegisterProp : public wxStringProperty , public svPGPropBase
         virtual ~svPGRegisterProp();
 
         void SetData( uint64_t data );
+        uint64_t GetDataFromChildren()    const;
         void Populate();
         void UpdateView();
 

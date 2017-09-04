@@ -207,6 +207,23 @@ svPGRegisterProp::~svPGRegisterProp()
     //dtor
 }
 
+
+uint64_t svPGRegisterProp::GetDataFromChildren()    const
+{
+    uint64_t ret = m_data;
+    size_t count = GetChildCount();
+    for (size_t i = 0; i < count; ++i)
+    {
+        svPGPropBase* prop = dynamic_cast<svPGPropBase*>(Item(i));
+        if (prop == nullptr)
+            continue;
+        ret &= ~prop->GetMask();
+        ret |= prop->GetData() << prop->GetBitOffset();
+    }
+
+    return ret;
+}
+
 void svPGRegisterProp::Populate()
 {
 
