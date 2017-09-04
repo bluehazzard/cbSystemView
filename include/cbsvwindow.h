@@ -13,7 +13,12 @@
 #include <wx/aui/aui.h>
 #include <wx/propgrid/manager.h>
 #include <wx/animate.h>
-#include <wx/propgrid/property.h>
+
+#if wxCHECK_VERSION(3,0,0)
+    #include <wx/propgrid/property.h>
+#else
+    #include <wx/propgrid/props.h>
+#endif // wxCHECK_VERSION
 
 #include <sdk.h>
 
