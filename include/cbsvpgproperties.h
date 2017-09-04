@@ -118,19 +118,6 @@ class svPGPropBase : public wxObject
          */
         virtual void SetDataFromString(const wxString& str)    = 0;
 
-
-        /** \brief Return the data as human readable string. The format is set by @ref SetRepresentation()
-         *
-         * \return virtual wxString
-         *
-         */
-        virtual wxString GetDataReadable() const;
-
-        virtual void UpdateView()               {};
-
-        virtual wxString GetDescription()                       { return m_desc; };
-        virtual void SetDescription(const wxString& desc)       { m_desc = desc; };
-
         enum ValueRepresentation
         {
             REP_HEX,        /**< Interpret data as hexadecimal value */
@@ -141,6 +128,21 @@ class svPGPropBase : public wxObject
             REP_FLOAT,      /**< Interpret data as float (works only on 32Bit register) value */
             REP_LAST_FLAG   /**< DO NOT USE!!  This is the last value in the enum for calculation purpose */
         };
+
+
+        /** \brief Return the data as human readable string. The format is set by @ref SetRepresentation()
+         *
+         * \return virtual wxString
+         *
+         */
+        virtual wxString GetDataReadable() const;
+
+        virtual wxString GetDataReadable(uint64_t data,uint64_t bitsize, ValueRepresentation rep) const;
+
+        virtual void UpdateView()               {};
+
+        virtual wxString GetDescription()                       { return m_desc; };
+        virtual void SetDescription(const wxString& desc)       { m_desc = desc; };
 
         /** \brief Check if this property value can be represented as @ref rep
          *

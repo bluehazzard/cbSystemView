@@ -13,26 +13,31 @@ IMPLEMENT_ABSTRACT_CLASS2(svPGPeripheryProp, wxStringProperty, svPGPropBase)
 
 wxString svPGPropBase::GetDataReadable() const
 {
+    return GetDataReadable(m_data, GetBitSize(), m_rep);
+}
+
+wxString svPGPropBase::GetDataReadable(uint64_t data,uint64_t bitsize, ValueRepresentation rep) const
+{
     wxString output;
-    switch(m_rep)
+    switch(rep)
     {
     case REP_BIN:
-        output = wxT("0b") + printBits(GetBitSize(), &m_data);
+        output = wxT("0b") + printBits(bitsize, data);
         break;
     case REP_HEX:
-        output.Printf(wxT("0x%llx"), m_data );
+        output.Printf(wxT("0x%llx"), data );
         break;
     case REP_DEC:
-        output.Printf(wxT("%lli"), (int64_t) m_data );
+        output.Printf(wxT("%lli"), (int64_t) data );
         break;
     case REP_UDEC:
-        output.Printf(wxT("%llu"), m_data );
+        output.Printf(wxT("%llu"), data );
         break;
     case REP_FLOAT:
-        output.Printf(wxT("%f"), *(reinterpret_cast<const float*>(&m_data)) );
+        output.Printf(wxT("%f"), *(reinterpret_cast<const float*>(&data)) );
         break;
     case REP_CHAR:
-        output.Printf(wxT("%c"), *(reinterpret_cast<const char*>(&m_data)) );
+        output.Printf(wxT("%c"), *(reinterpret_cast<const char*>(&data)) );
     }
 
     return output;
