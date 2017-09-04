@@ -62,6 +62,7 @@ class cbSVWindow : public wxPanel
         void OnItemExpand(wxPropertyGridEvent& event);
         void OnItemCollapsed(wxPropertyGridEvent& event);
         void OnRightClick(wxPropertyGridEvent &evt);
+        void OnItemChanged(wxPropertyGridEvent &evt);
 
         void OnContextMenu(wxCommandEvent& evt);
 
@@ -127,6 +128,7 @@ class cbSVWindow : public wxPanel
         SVDDevice* m_device;
 
         std::list<RegisterWatch> m_RegisterWatches;
+        std::list<RegisterWatch> m_TempRegisterWatches;
 
         DECLARE_EVENT_TABLE();
 };

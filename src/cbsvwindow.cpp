@@ -35,6 +35,8 @@ BEGIN_EVENT_TABLE(cbSVWindow,wxPanel)
 	EVT_PG_ITEM_COLLAPSED(ID_PROP_GRID, cbSVWindow::OnItemCollapsed)
 	EVT_PG_RIGHT_CLICK(ID_PROP_GRID, cbSVWindow::OnRightClick)
 
+	EVT_PG_CHANGED(ID_PROP_GRID, cbSVWindow::OnItemChanged)
+
 	EVT_TIMER( ID_SEARCH_TIMER, cbSVWindow::OnSearchTimer)
 
 	EVT_MENU(ID_MENU_VIEW_HEX  , cbSVWindow::OnContextMenu )
@@ -265,6 +267,14 @@ void cbSVWindow::UpdateWatches()
         }
     }
 
+    cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
+    itr = m_TempRegisterWatches.begin();
+    for(; itr != m_TempRegisterWatches.end() ;)
+    {
+        dbg->DeleteWatch(itr->m_watch);
+        m_TempRegisterWatches.erase(itr++);
+    }
+
     if(pd != nullptr)
         delete pd;
 
@@ -376,6 +386,29 @@ void cbSVWindow::OnItemCollapsed(wxPropertyGridEvent &evt)
             return;
         }
     }
+}
+
+void cbSVWindow::OnItemChanged(wxPropertyGridEvent &evt)
+{
+    svPGPropBase *prop = dynamic_cast<svPGPropBase*>(evt.GetProperty());
+   /* if (prop->IsKindOf(CLASSINFO(svPGPeripheryProp) ))
+    {
+        // we don't change register so do nothing
+        prop = dynamic_cast<svPGPeripheryProp*>(prop)->GetRegisterChanged();
+    }
+    // Try to get the register
+
+    cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
+    RegisterWatch watch;
+    watch.m_property = evt.GetProperty();
+    watch.m_watch    = dbg->AddMemoryRange( prop->GetAddress() , prop->GetSize(), wxEmptyString );
+
+    uint64_t da = prop->GetData();
+    wxString data;
+    data.From8BitData((char*) &da, sizeof(uint64_t));
+
+    dbg->SetWatchValue(watch.m_watch, data);
+    m_TempRegisterWatches.push_back(watch);*/
 }
 
 void cbSVWindow::OnRightClick(wxPropertyGridEvent &evt)
