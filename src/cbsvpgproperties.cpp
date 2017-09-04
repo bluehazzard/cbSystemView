@@ -504,32 +504,24 @@ void svPGBitProp::SetDataFromBinary(const wxString& str)
 }
 
 
-wxString printBits(size_t const size, void const * const ptr)
+wxString printBits(size_t const size, uint64_t data)
 {
-    unsigned char *b = (unsigned char*) ptr;
     unsigned char byte;
     wxString ret;
     ret.clear();
     int i, j;
 
-    size_t byteCount = size / 8;
-    size_t bitsLeft = size;
+    j = size -1;
 
-    if(byteCount == 0 && size != 0)
-        byteCount = 1;
-
-    for (i=byteCount-1;i>=0;i--)
+    for ( ;j>=0;j--)
     {
-        for (j=7;j>=0 && bitsLeft != 0;j--)
-        {
-            byte = (b[i] >> j) & 1;
+            byte = (data >> j) & 1;
             if(byte)
                 ret << wxT("1");
             else
                 ret << wxT("0");
-            bitsLeft--;
-        }
     }
+
     return ret;
 }
 

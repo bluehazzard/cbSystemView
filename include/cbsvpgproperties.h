@@ -350,7 +350,7 @@ class svPGValueProp : public wxStringProperty, public svPGPropBase
     private:
 };
 
-wxString printBits(size_t const size, void const * const ptr);
+wxString printBits(size_t const size, uint64_t ptr);
 
 
 #endif // CBSVPGPROPERTIES_H
