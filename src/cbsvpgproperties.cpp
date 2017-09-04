@@ -270,13 +270,19 @@ void svPGRegisterProp::SetDataFromString(const wxString& str)
     //SetData((uint64_t) num);
     m_data = num & m_mask;
     SetData(m_data);
-    UpdateView();
+
 }
 
 // Property value...
+
 void svPGRegisterProp::SetValueFromString(const wxString& str, int flags)
 {
     SetDataFromString(str);
+}
+
+void svPGRegisterProp::SetValue(wxVariant value, wxVariant * pList, int flags)
+{
+    SetValueFromString(value.GetString() );
 }
 
 #if wxCHECK_VERSION(3,0,0)
@@ -333,12 +339,12 @@ void svPGRegisterProp::ChildChanged( wxVariant& thisValue, int childIndex, wxVar
 
 void svPGRegisterProp::RefreshChildren()
 {
-
+    SetData( m_data );
 }
 
 void svPGRegisterProp::UpdateView()
 {
-    SetValue(GetDataReadable());
+    m_value = GetDataReadable();
 }
 
 void svPGRegisterProp::SetData( uint64_t data )
@@ -425,7 +431,7 @@ void svPGEnumFieldProp::Populate()
 
 void svPGEnumFieldProp::SetData( uint64_t data)
 {
-    m_data = data;
+    m_data = (data & m_mask)>>m_bitOffset;
     UpdateView();
 }
 
@@ -465,7 +471,8 @@ void svPGEnumFieldProp::UpdateView()
 
 void svPGValueProp::UpdateView()
 {
-    SetValue(GetDataReadable());
+    //SetValue(GetDataReadable());
+    m_value = GetDataReadable();
 }
 
 void svPGValueProp::SetDataFromBinary(const wxString& str)
@@ -491,8 +498,8 @@ void svPGValueProp::SetDataFromString(const wxString& str)
     {
         str.ToLongLong(&num,10);
     }
-    //SetData((uint64_t) num);
-    m_data = num & m_mask;
+    m_data = num & (m_mask>>m_bitOffset);
+
     UpdateView();
 }
 

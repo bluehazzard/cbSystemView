@@ -207,6 +207,8 @@ class svPGRegisterProp : public wxStringProperty , public svPGPropBase
         void Populate();
         void UpdateView();
 
+        void SetValue(wxVariant value, wxVariant * pList = NULL, int flags = wxPG_SETVAL_REFRESH_EDITOR);
+
         #if wxCHECK_VERSION(3,0,0)
         virtual wxVariant ChildChanged( wxVariant& thisValue,
                                     int childIndex,
