@@ -272,10 +272,21 @@ class svPGBitProp : public wxBoolProperty, public svPGPropBase
                                             svPGPropBase(&field, this)
         {
              SetAttribute( wxPG_BOOL_USE_CHECKBOX, true );
-             m_mask = field.m_bitRange.GetMask();
-             m_bitOffset = field.m_bitRange.GetOffset();
-             m_bitSize = 1;
-             m_resetMask = field.m_bitRange.GetMask();
+
+
+             m_mask         = field.m_bitRange.GetMask();
+             m_bitOffset    = field.m_bitRange.GetOffset();
+             m_bitSize      = 1;
+             m_resetMask    = field.m_bitRange.GetMask();
+             m_resetValue   = field.GetResetValue();
+
+             wxString desc = field.GetDesc();
+             desc << wxT("\n\n");
+             desc << wxString::Format(wxT("Bit size: %lld\n"), m_bitSize);
+             desc << wxString::Format(wxT("Bit offset: %lld\n"), m_bitOffset);
+
+             SetDescription(desc);
+             SetHelpString(desc);
         };
         virtual ~svPGBitProp()      {};
 
@@ -307,13 +318,20 @@ class svPGValueProp : public wxStringProperty, public svPGPropBase
                                                svPGPropBase(&field, this)
         {
             SetBitFlag(m_repCap, REP_HEX, REP_BIN, REP_DEC, REP_UDEC, REP_FLOAT, REP_CHAR);
-            SetHelpString( field.GetDesc() );
+            m_rep = REP_HEX;
+
+            wxString desc =  field.GetDesc();
+
             m_mask = field.m_bitRange.GetMask();
             m_bitOffset = field.m_bitRange.GetOffset();
             m_bitSize = field.m_bitRange.GetWidth();
             m_size = field.GetSize() / 8;
 
-            m_rep = REP_HEX;
+
+            desc << wxString::Format(wxT("\nBit size: %lld"), m_bitSize);
+            desc << wxString::Format(wxT("\nBit offset: %lld"), m_bitOffset);
+
+            SetHelpString(desc);
 
         };
 

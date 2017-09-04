@@ -148,6 +148,9 @@ svPGRegisterProp::svPGRegisterProp(const SVDRegister &reg, const SVDPeriphery &p
     SetBitFlag(m_repCap, REP_HEX, REP_BIN); // We can represent the Data in hex or binary, other values make no sense?
     m_rep = REP_HEX;
 
+    m_data      = per.GetResetValue();
+    m_resetValue= per.GetResetValue();
+    m_resetMask = per.GetResetMask();
     m_addr      = per.GetBaseAddress() + reg.GetAddressOfset();
     m_baseAddr  = per.GetBaseAddress();    // Base address is the periphery
     m_offset    = reg.GetAddressOfset();  // periphery has 0 offset
@@ -349,11 +352,13 @@ svPGEnumFieldProp::svPGEnumFieldProp(SVDField &field) : wxEnumProperty(field.Get
     m_resetValue    = field.GetResetValue();
     m_resetMask     = field.GetResetMask();
 
-    wxString description;
-    description << field.GetDesc();
+    wxString desc = field.GetDesc();
+    desc << wxT("\n\n");
+    desc << wxString::Format(wxT("Bit size: %lld\n"), m_bitSize);
+    desc << wxString::Format(wxT("Bit offset: %lld\n"), m_bitOffset);
 
-
-    SetHelpString(description);
+    SetDescription(desc);
+    SetHelpString(desc);
 
     // Find best length for value and description part
     auto itr = field.m_enumerated_value.GetValuesBegin();
