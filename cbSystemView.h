@@ -164,6 +164,7 @@ class cbSystemView : public cbPlugin
         void OnDebuggerStarted(CodeBlocksEvent& evt);
         void OnDebuggerFinished(CodeBlocksEvent& evt);
         void OnDebuggerPaused(CodeBlocksEvent& evt);
+        void OnDebuggerContinued(CodeBlocksEvent& evt);
 
         void OnProjectActivated(CodeBlocksEvent& evt);
 

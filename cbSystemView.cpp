@@ -67,6 +67,7 @@ void cbSystemView::OnAttach()
     Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_STARTED,  new cbEventFunctor<cbSystemView, CodeBlocksEvent>(this, &cbSystemView::OnDebuggerStarted));
     Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_FINISHED, new cbEventFunctor<cbSystemView, CodeBlocksEvent>(this, &cbSystemView::OnDebuggerFinished));
     Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_PAUSED,   new cbEventFunctor<cbSystemView, CodeBlocksEvent>(this, &cbSystemView::OnDebuggerPaused));
+    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_CONTINUED,   new cbEventFunctor<cbSystemView, CodeBlocksEvent>(this, &cbSystemView::OnDebuggerContinued));
 
     Manager::Get()->RegisterEventSink(cbEVT_PROJECT_ACTIVATE,   new cbEventFunctor<cbSystemView, CodeBlocksEvent>(this, &cbSystemView::OnProjectActivated));
 
@@ -126,6 +127,11 @@ void cbSystemView::OnDebuggerStarted(CodeBlocksEvent& evt)
 void cbSystemView::OnDebuggerFinished(CodeBlocksEvent& evt)
 {
     //cbMessageBox(wxT("finished"));
+}
+
+void cbSystemView::OnDebuggerContinued(CodeBlocksEvent& evt)
+{
+    m_window->OnDebuggerContinued();
 }
 
 void cbSystemView::OnDebuggerPaused(CodeBlocksEvent& evt)

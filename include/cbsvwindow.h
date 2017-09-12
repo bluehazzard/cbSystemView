@@ -41,6 +41,7 @@ class cbSVWindow : public wxPanel
 
         void UpdateWatches();
         void OnDebuggerStarted();
+        void OnDebuggerContinued();
         void SetSVDFile(const wxString& file);
 
         void DeleteAllWatches();

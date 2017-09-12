@@ -245,6 +245,11 @@ void cbSVWindow::PopulateGrid()
     }
 }
 
+void cbSVWindow::OnDebuggerContinued()
+{
+    UpdateWorkingStat(WORKING_STAT_UPDATING);
+}
+
 void cbSVWindow::UpdateWatches()
 {
     try
