@@ -210,7 +210,7 @@ int SVDArray::ReadFromNode(TiXmlElement* node)
             // create list with index names
             for( long i = l_from;i <= l_to;i++ )
             {
-                m_dimIndex.push_back( wxString::Format( wxT("%d"), i ));
+                m_dimIndex.push_back( wxString::Format( wxT("%ld"), i ));
             }
         }
 
