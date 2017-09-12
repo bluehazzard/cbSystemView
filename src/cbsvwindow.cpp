@@ -158,6 +158,9 @@ cbSVWindow::cbSVWindow(wxWindow* parent) : wxPanel(parent, wxID_ANY, wxDefaultPo
 
     m_searchTimer = new wxTimer(this, ID_SEARCH_TIMER);
 
+    wxFont font(8, wxFONTFAMILY_MODERN, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+    m_pg_first_page->GetGrid()->SetFont(font);
+
     PopulateGrid();
 
     m_pg_first_page->GetGrid()->CenterSplitter();
