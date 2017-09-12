@@ -297,7 +297,7 @@ void cbSVWindow::UpdateWatches()
     if(pd != nullptr)
         delete pd;
 
-   // m_pg_first_page->RefreshGrid();
+    m_pg_first_page->RefreshGrid();
 
     UpdateWorkingStat(WORKING_STAT_UPDATING, false);
     } catch (const std::length_error& le)

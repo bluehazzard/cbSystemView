@@ -49,7 +49,7 @@ void svPGBaseProp::SetDataFromBinary(const wxString& str)
     data.SetDataFromBinary(str ,GetMask(), GetBitOffset() );
     wxVariant var;
     var << data;
-    SetValue(var);//,0,0);
+    SetValue(var, 0, 0);
     //m_value = var;
 }
 
@@ -402,7 +402,7 @@ void svPGRegisterProp::SetData( uint64_t data )
     d.SetData(data);
     wxVariant tmp;
     tmp << d;
-    SetValue(tmp);//,0,0);
+    SetValue(tmp, 0, 0);
     //m_value = tmp;
 }
 
@@ -428,7 +428,7 @@ void svPGRegisterProp::RefreshChildren()
 
         wxVariant var;
         var << child_data;
-        child->SetValue(var);//,0,0);
+        child->SetValue(var, 0, 0);
         //SetValue(var,0,0);
         //m_value = var;
     }
@@ -699,7 +699,7 @@ void svPGBitProp::SetDataFromBinary(const wxString& str)
     Data.SetData((data & GetMask()) >> GetBitOffset() );
     wxVariant var;
     var << Data;
-    SetValue(var);//,0,0);
+    SetValue(var, 0, 0);
     //m_value = var;
 }
 
