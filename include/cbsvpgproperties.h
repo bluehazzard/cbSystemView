@@ -39,11 +39,161 @@ void SetBitFlag(A& bitfield, Args... flags)
  * you will get "1" or "0" also if the bit position of the flag is BIT3
  * in the register
  */
-class svPGPropBase : public wxObject
+
+         enum ValueRepresentation
+        {
+            REP_HEX,        /**< Interpret data as hexadecimal value */
+            REP_DEC,        /**< Interpret data as signed integer value */
+            REP_UDEC,       /**< Interpret data as unsigned integer value */
+            REP_BIN,        /**< Interpret data as binary value */
+            REP_CHAR,       /**< Interpret data as ASCII character */
+            REP_FLOAT,      /**< Interpret data as float (works only on 32Bit register) value */
+            REP_BYTE_ARRAY,
+            REP_LAST_FLAG   /**< DO NOT USE!!  This is the last value in the enum for calculation purpose */
+        };
+
+
+class svPGBaseProp : public wxPGProperty
 {
-        DECLARE_ABSTRACT_CLASS(svPGPropBase);
+     DECLARE_DYNAMIC_CLASS(svPGBaseProp);
+public:
+    svPGBaseProp() : wxPGProperty()
+    {
+        ClearFlag(wxPG_PROP_COMPOSED_VALUE);
+    };
+
+    svPGBaseProp(const wxString& name, const wxString& label) : wxPGProperty(name,label)
+    {
+        ClearFlag(wxPG_PROP_COMPOSED_VALUE);
+    };
+
+    svPGBaseProp(const  SVDRegisterProperties* base, wxPGProperty* prop)
+    {
+        wxString desc = base->GetDesc();
+        if(base->GetAccessRight() == SVD_ACCESS_READ)
+        {
+            prop->SetFlagRecursively(wxPG_PROP_READONLY, true);
+            desc += _T(" (Read only)");
+        }
+        prop->SetHelpString( desc );
+
+    };
+
+    svPGBaseProp(const SVDPeriphery& per) : wxPGProperty(per.GetName(), per.GetName())
+    {
+        m_resetValue= per.GetResetValue();
+        m_resetMask = per.GetResetMask();
+        m_addr      = per.GetBaseAddress();
+        m_baseAddr  = per.GetBaseAddress();    // Base address is the periphery
+    }
+
+    svPGBaseProp(const SVDPeriphery& per, const SVDRegister& reg) : wxPGProperty(reg.GetName(), reg.GetName())
+    {
+        m_resetValue= per.GetResetValue();
+        m_resetMask = per.GetResetMask();
+        m_addr      = per.GetBaseAddress() + reg.GetAddressOfset();
+        m_baseAddr  = per.GetBaseAddress();    // Base address is the periphery
+        m_offset    = reg.GetAddressOfset();  // periphery has 0 offset
+        //m_mask      = 0xFFFFFFFFFFFFFFFF;
+        m_size      = ceil(reg.GetSize() / 8.0);    // We have to determine the size of the register...
+        m_bitSize   = reg.GetSize();        // Register size is in bits
+
+    }
+
+    svPGBaseProp(const SVDField& field) : wxPGProperty(field.GetName(), field.GetName())
+    {
+        m_mask      = field.m_bitRange.GetMask();
+        m_bitOffset = field.m_bitRange.GetOffset();
+        m_bitSize   = field.m_bitRange.GetWidth();
+        m_size      = ceil(field.GetSize() / 8.0);
+        m_resetValue= field.GetResetValue();
+        m_resetMask = field.GetResetMask();
+    }
+
+    /** \brief If the property is a Enum property it gets populated in this function
+    *
+    *  If a sub property can be of the type enum this function has to be called on
+    *  every sub property
+    * \return virtual void
+    *
+    */
+    virtual void Populate() {};
+
+    bool CanRepresent(ValueRepresentation rep) const    { return m_repCap.test(rep); };
+    ValueRepresentation GetRepresentation() const       { return m_rep; };
+    void SetRepresentation(ValueRepresentation rep)     { m_rep = rep; GetGrid()->Update(); };
+
+    virtual void GetDataToBinary(wxString& str);
+    virtual void SetData(uint64_t data);
+
+    std::bitset<REP_LAST_FLAG> m_repCap;    /**< Flag list for all ValueRepresentation */
+    ValueRepresentation m_rep;              /**< current representation  */
+
+    uint64_t GetMask()      const   { return m_mask; };             /**< Get bit mask for data */
+    void SetMask(uint64_t msk)      { m_mask = msk; };           /**< Get bit mask for data */
+
+    uint64_t GetResetVal()  const   { return m_resetValue; };       /**< Get reset value for data */
+    void SetResetVal(uint64_t val)  { m_resetValue = val; };       /**< Get reset value for data */
+
+    uint64_t GetResetMask() const   { return m_resetMask; };        /**< Get bit mask for reset value */
+    void SetResetMask(uint64_t msk) { m_resetMask = msk; };        /**< Get bit mask for reset value */
+
+    uint64_t GetBitSize()   const   { return m_bitSize; };          /**< Get bit size of the data*/
+    void SetBitSize(uint64_t size)  { m_bitSize = size; };
+
+    uint64_t GetBitOffset() const   { return m_bitOffset; };        /**< Get bit offset (<< operation) */
+    void SetBitOffset(uint64_t of)  { m_bitOffset = of; };        /**< Get bit offset (<< operation) */
+
+    uint64_t GetAddress() const     { return m_addr; };             /**< Get address*/
+    void SetAddress(uint64_t addr)  { m_addr = addr; };             /**< Set address*/
+
+    /** \brief Get the site of the register/periphery in bytes
+    *
+    * \return uint64_t
+    *
+    */
+    uint64_t GetSize()    const    { return m_size; };
+    void SetSize(uint64_t size)    { m_size = size; };
+
+    /** \brief Set the data from a wxString encoded with From8BitData()
+    *
+    *
+    * \param str const wxString&   String created with wxString::To8BitData()
+    * \return virtual void
+    *
+    */
+    virtual void SetDataFromBinary(const wxString& str);
+
+    virtual wxString GetDescription()                       { return m_desc; };
+    virtual void SetDescription(const wxString& desc)       { m_desc = desc; };
+
+
+private:
+
+    uint64_t m_mask;        /**< mask for data */
+    uint64_t m_resetValue;  /**< reset value for data */
+    uint64_t m_resetMask;   /**< reset mask for data */
+    uint64_t m_bitSize;     /**< bit size in data*/
+    uint64_t m_bitOffset;   /**< bit offset in data */
+    uint64_t m_baseAddr;    /**< Base address of the periphery/register. If it is a fag the address of the register is stored  */
+    uint64_t m_addr;        /**< Base address of the periphery/register. If it is a fag the address of the register is stored  */
+    uint64_t m_offset;      /**< Offset from base address ?needed?  */
+    uint64_t m_size;        /**< size of the periphery/register/flag in bytes can be 0 for bit size < 8  */
+
+    wxString m_desc;
+};
+
+class svPGData : public wxObject
+{
+        DECLARE_DYNAMIC_CLASS(svPGData);
+
     public:
-        svPGPropBase(const  SVDRegisterProperties* base, wxPGProperty* prop)
+        svPGData()
+        {
+            m_data = 0;
+        }
+
+        svPGData(const  SVDRegisterProperties* base, wxPGProperty* prop)
         {
             wxString desc = base->GetDesc();
             if(base->GetAccessRight() == SVD_ACCESS_READ)
@@ -55,26 +205,13 @@ class svPGPropBase : public wxObject
 
         };
 
-        virtual ~svPGPropBase()     {};
+        svPGData(uint64_t dat)
+        {
+            m_data = dat;
+        }
 
+        virtual ~svPGData()     {};
 
-        /** \brief If the property is a Enum property it gets populated in this function
-         *
-         *  If a sub property can be of the type enum this function has to be called on
-         *  every sub property
-         * \return virtual void
-         *
-         */
-        virtual void Populate() {};
-
-        uint64_t GetAddress() const  { return m_addr; };
-
-        /** \brief Get the site of the register/periphery in bytes
-         *
-         * \return uint64_t
-         *
-         */
-        uint64_t GetSize()    const    { return m_size; };
 
         /** \brief Get the uint64_t data. Only usable for registers and below
          * To get the data from a periphery you have to iterate over it and get all register
@@ -82,13 +219,9 @@ class svPGPropBase : public wxObject
          * \return virtual uint64_t
          *
          */
-        virtual uint64_t GetData()  const    { return m_data; };
+        virtual uint64_t GetData() const { return m_data; };
 
-        uint64_t GetMask()      const { return m_mask; };             /**< Get bit mask for data */
-        uint64_t GetResetVal()  const { return m_resetValue; };       /**< Get reset value for data */
-        uint64_t GetResetMask() const { return m_resetMask; };        /**< Get bit mask for reset value */
-        uint64_t GetBitSize()   const { return m_bitSize; };          /**< Get bit size of the data*/
-        uint64_t GetBitOffset() const { return m_bitOffset; };        /**< Get bit offset (<< operation) */
+
 
         /** \brief Set data (only for registers and below
          *
@@ -99,16 +232,6 @@ class svPGPropBase : public wxObject
          */
         virtual void SetData(uint64_t data)     { m_data = data; };
 
-
-        /** \brief Set the data from a wxString encoded with From8BitData()
-         *
-         *
-         * \param str const wxString&   String created with wxString::To8BitData()
-         * \return virtual void
-         *
-         */
-        virtual void SetDataFromBinary(const wxString& str)    = 0;
-
         /** \brief Set the data from a wxString encoded in human readable format
          *
          *
@@ -116,18 +239,7 @@ class svPGPropBase : public wxObject
          * \return virtual void
          *
          */
-        virtual void SetDataFromString(const wxString& str)    = 0;
-
-        enum ValueRepresentation
-        {
-            REP_HEX,        /**< Interpret data as hexadecimal value */
-            REP_DEC,        /**< Interpret data as signed integer value */
-            REP_UDEC,       /**< Interpret data as unsigned integer value */
-            REP_BIN,        /**< Interpret data as binary value */
-            REP_CHAR,       /**< Interpret data as ASCII character */
-            REP_FLOAT,      /**< Interpret data as float (works only on 32Bit register) value */
-            REP_LAST_FLAG   /**< DO NOT USE!!  This is the last value in the enum for calculation purpose */
-        };
+        virtual void SetDataFromString(const wxString& str);
 
 
         /** \brief Return the data as human readable string. The format is set by @ref SetRepresentation()
@@ -135,51 +247,46 @@ class svPGPropBase : public wxObject
          * \return virtual wxString
          *
          */
-        virtual wxString GetDataReadable() const;
-
         virtual wxString GetDataReadable(uint64_t data,uint64_t bitsize, ValueRepresentation rep) const;
+        virtual wxString GetDataReadable(ValueRepresentation rep, uint64_t bitsize) const;
 
-        virtual void UpdateView()               {};
+        void SetDataFromBinary(const wxString& str, const uint64_t& mask, const uint64_t offset);
 
-        virtual wxString GetDescription()                       { return m_desc; };
-        virtual void SetDescription(const wxString& desc)       { m_desc = desc; };
-
-        /** \brief Check if this property value can be represented as @ref rep
-         *
-         * \param rep
-         * \return bool CanRepresent(ValueRepresentation rep)     true if the representation is valid
-         *
-         */
-        bool CanRepresent(ValueRepresentation rep)                      { return m_repCap.test(static_cast<int>(rep)); };
-        virtual void SetRepresentation(ValueRepresentation rep);
-        virtual ValueRepresentation GetRepresentation()  const          { return m_rep; };
+        bool operator ==(const svPGData& right)
+        {
+            if(right.m_data     == m_data )
+                return true;
+            else
+                return false;
+        }
 
     protected:
-        uint64_t m_baseAddr;    /**< Base address of the periphery/register. If it is a fag the address of the register is stored  */
-        uint64_t m_addr;        /**< Base address of the periphery/register. If it is a fag the address of the register is stored  */
-        uint64_t m_offset;      /**< Offset from base address ?needed?  */
-        uint64_t m_size;        /**< size of the periphery/register/flag in bytes can be 0 for bit size < 8  */
 
         uint64_t m_data;        /**< actual data */
-        uint64_t m_mask;        /**< mask for data */
-        uint64_t m_resetValue;  /**< reset value for data */
-        uint64_t m_resetMask;   /**< reset mask for data */
-        uint64_t m_bitSize;     /**< bit size in data*/
-        uint64_t m_bitOffset;   /**< bit offset in data */
 
-        std::bitset<REP_LAST_FLAG> m_repCap;    /**< Flag list for all ValueRepresentation */
-        ValueRepresentation m_rep;              /**< current representation  */
 
-        wxString m_desc;
 
 };
 
+#if wxCHECK_VERSION(3,0,0)
+WX_PG_DECLARE_VARIANT_DATA(svPGData);
+#else
+WX_PG_DECLARE_VARIANT_DATA(svPGDataVariantData,
+                             svPGData,
+                             wxEMPTY_PARAMETER_VALUE);
+const svPGData& svPGDataRefFromVariant( const wxVariant& variant );
+svPGData& svPGDataRefFromVariant( wxVariant& variant );
+#endif // wxCHECK_VERSION
 
-class svPGPeripheryProp : public wxStringProperty, public svPGPropBase
+
+class svPGRegisterProp;
+
+class svPGPeripheryProp : public svPGBaseProp
 {
-        DECLARE_ABSTRACT_CLASS(svPGPeripheryProp);
+        WX_PG_DECLARE_PROPERTY_CLASS(svPGPeripheryProp);
     public:
 
+        svPGPeripheryProp()                             {};
         svPGPeripheryProp(SVDPeriphery &per);
         virtual ~svPGPeripheryProp();
 
@@ -189,25 +296,36 @@ class svPGPeripheryProp : public wxStringProperty, public svPGPropBase
         virtual void SetDataFromBinary(const wxString& str);
         virtual void SetDataFromString(const wxString& str);        /**< Not supported in this property */
 
+        virtual wxString ValueToString( wxVariant& value, int argFlags ) const { return wxEmptyString; };
+        virtual bool StringToValue( wxVariant& variant, const wxString& text, int argFlags ) {};
+
+        virtual void RefreshChildren();
+
         void Populate();
+
+        void SetRegisterChanged(svPGRegisterProp* reg);
+        svPGRegisterProp* GetRegisterChanged();
+
     protected:
 
+        svPGRegisterProp* m_RegisterChanged;
+
     private:
+
+        wxString m_internalData;
 };
 
-class svPGRegisterProp : public wxStringProperty , public svPGPropBase
+class svPGRegisterProp : public svPGBaseProp
 {
-        DECLARE_ABSTRACT_CLASS(svPGRegisterProp);
+        WX_PG_DECLARE_PROPERTY_CLASS(svPGRegisterProp);
     public:
+        svPGRegisterProp() : svPGBaseProp(wxEmptyString, wxEmptyString)     {};
         svPGRegisterProp(const SVDRegister &reg, const SVDPeriphery &per);
         virtual ~svPGRegisterProp();
 
         void SetData( uint64_t data );
         uint64_t GetDataFromChildren()    const;
         void Populate();
-        void UpdateView();
-
-        void SetValue(wxVariant value, wxVariant * pList = NULL, int flags = wxPG_SETVAL_REFRESH_EDITOR);
 
         #if wxCHECK_VERSION(3,0,0)
         virtual wxVariant ChildChanged( wxVariant& thisValue,
@@ -221,8 +339,10 @@ class svPGRegisterProp : public wxStringProperty , public svPGPropBase
 
         //void ChildChanged(wxVariant& thisValue, int childIndex, wxVariant& childValue)  const;
         void SetValueFromString(const wxString& str, int flags = 0);
-        virtual void SetDataFromString(const wxString& str);
         virtual void SetDataFromBinary(const wxString& str);
+
+        virtual wxString ValueToString( wxVariant& value, int argFlags ) const;
+        virtual bool StringToValue( wxVariant& variant, const wxString& text, int argFlags ) {};
 
         virtual void RefreshChildren();
 
@@ -245,20 +365,21 @@ struct svPGEnumFieldElement
     uint64_t value;
 };
 
-class svPGEnumFieldProp : public wxEnumProperty, public svPGPropBase
+class svPGEnumFieldProp : public svPGBaseProp
 {
-        DECLARE_ABSTRACT_CLASS(svPGEnumFieldProp);
+        WX_PG_DECLARE_PROPERTY_CLASS(svPGEnumFieldProp);
+
     public:
+        svPGEnumFieldProp() : svPGBaseProp(wxEmptyString, wxEmptyString)              {};
         svPGEnumFieldProp(SVDField &field);
         virtual ~svPGEnumFieldProp()    {};
 
         void Populate();
 
-        void SetData( uint64_t data );
-        virtual void SetDataFromBinary(const wxString& str);
-        virtual void SetDataFromString(const wxString& str);
+        virtual int GetChoiceSelection() const;
 
-        void UpdateView();
+        virtual wxString ValueToString( wxVariant& value, int argFlags ) const;
+        virtual bool StringToValue( wxVariant& variant, const wxString& text, int argFlags );
 
     protected:
 
@@ -268,91 +389,49 @@ class svPGEnumFieldProp : public wxEnumProperty, public svPGPropBase
 
 };
 
-class svPGBitProp : public wxBoolProperty, public svPGPropBase
-{
-        DECLARE_ABSTRACT_CLASS(svPGBitProp);
-    public:
-        svPGBitProp(const SVDField &field) : wxBoolProperty( field.GetName(),
-                                                             field.GetName() ) ,
-                                            svPGPropBase(&field, this)
-        {
-             SetAttribute( wxPG_BOOL_USE_CHECKBOX, true );
 
-
-             m_mask         = field.m_bitRange.GetMask();
-             m_bitOffset    = field.m_bitRange.GetOffset();
-             m_bitSize      = 1;
-             m_resetMask    = field.m_bitRange.GetMask();
-             m_resetValue   = field.GetResetValue();
-
-             wxString desc = field.GetDesc();
-             desc << wxT("\n\n");
-             desc << wxString::Format(wxT("Bit size: %lld\n"), m_bitSize);
-             desc << wxString::Format(wxT("Bit offset: %lld\n"), m_bitOffset);
-
-             SetDescription(desc);
-             SetHelpString(desc);
-        };
-        virtual ~svPGBitProp()      {};
-
-        void SetData( uint64_t data )
-        {
-            SetValueFromInt((data & m_mask));
-        };
-
-        virtual void SetDataFromString(const wxString& str);
-        virtual void SetDataFromBinary(const wxString& str);
-
-        void Populate() {};
-
-    protected:
-
-    private:
-
-};
-
-class svPGValueProp : public wxStringProperty, public svPGPropBase
+class svPGValueProp : public svPGBaseProp
 {
 
-        DECLARE_ABSTRACT_CLASS(svPGValueProp);
+        WX_PG_DECLARE_PROPERTY_CLASS(svPGValueProp);
 
     public:
 
-        svPGValueProp(const SVDField &field) : wxStringProperty( field.GetName(),
-                                                                 field.GetName() ),
-                                               svPGPropBase(&field, this)
-        {
-            SetBitFlag(m_repCap, REP_HEX, REP_BIN, REP_DEC, REP_UDEC, REP_FLOAT, REP_CHAR);
-            m_rep = REP_HEX;
-
-            wxString desc =  field.GetDesc();
-
-            m_mask = field.m_bitRange.GetMask();
-            m_bitOffset = field.m_bitRange.GetOffset();
-            m_bitSize = field.m_bitRange.GetWidth();
-            m_size = field.GetSize() / 8;
-
-
-            desc << wxString::Format(wxT("\nBit size: %lld"), m_bitSize);
-            desc << wxString::Format(wxT("\nBit offset: %lld"), m_bitOffset);
-
-            SetHelpString(desc);
-
-        };
+        svPGValueProp() : svPGBaseProp(wxEmptyString, wxEmptyString)      {};
+        svPGValueProp(const SVDField& field);
 
         virtual ~svPGValueProp()    {};
 
-        virtual void SetDataFromString(const wxString& str);
-        virtual void SetDataFromBinary(const wxString& str);
-
-        void Populate() {};
-        void SetData( uint64_t data );
-        void UpdateView();
-
+        virtual wxString ValueToString( wxVariant& value, int argFlags ) const;
+        virtual bool StringToValue( wxVariant& variant, const wxString& text, int argFlags );
 
     protected:
 
     private:
+};
+
+
+class svPGBitProp : public svPGBaseProp
+{
+        WX_PG_DECLARE_PROPERTY_CLASS(svPGBitProp);
+
+    public:
+        svPGBitProp() : svPGBaseProp(wxEmptyString, wxEmptyString)      {};
+        svPGBitProp(const SVDField& field);
+        virtual ~svPGBitProp()      {};
+
+        wxString ValueToString( wxVariant& value, int argFlags ) const;
+        bool StringToValue( wxVariant& variant, const wxString& text, int argFlags );
+
+        virtual int GetChoiceSelection() const;
+        bool IsValueUnspecified() const;
+
+        void SetDataFromBinary(const wxString& str);
+
+    protected:
+
+    private:
+
 };
 
 wxString printBits(size_t const size, uint64_t ptr);

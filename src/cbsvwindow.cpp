@@ -106,6 +106,8 @@ cbSVWindow::cbSVWindow(wxWindow* parent) : wxPanel(parent, wxID_ANY, wxDefaultPo
     SetAutoLayout(TRUE);
     SetSizer(bs);
 
+    m_curSelProp = nullptr;
+
 
 
     wxToolBar* toolbar = m_pg_man->GetToolBar();
@@ -245,6 +247,9 @@ void cbSVWindow::PopulateGrid()
 
 void cbSVWindow::UpdateWatches()
 {
+    try
+    {
+
     size_t wcount =  m_RegisterWatches.size();
     wxProgressDialog *pd = nullptr;
 
@@ -259,7 +264,13 @@ void cbSVWindow::UpdateWatches()
     {
         wxString val;
         (*itr).m_watch->GetValue(val);
-        dynamic_cast<svPGPropBase*>((*itr).m_property)->SetDataFromBinary(val);
+        svPGBaseProp* prop = dynamic_cast<svPGBaseProp*>((*itr).m_property);
+        //const svPGData& old_data = svPGDataRefFromVariant(->GetValue());
+        //svPGData data(&old_data);
+        prop->SetDataFromBinary(val);
+        //wxVariant var;
+        //var << data;
+        //(*itr).m_property->SetValue(var);
         if(pd != nullptr)
         {
             pd->Update(i);
@@ -278,7 +289,13 @@ void cbSVWindow::UpdateWatches()
     if(pd != nullptr)
         delete pd;
 
+   // m_pg_first_page->RefreshGrid();
+
     UpdateWorkingStat(WORKING_STAT_UPDATING, false);
+    } catch (const std::length_error& le)
+    {
+        Manager::Get()->GetLogManager()->LogError(cbC2U(le.what()));
+    }
 }
 
 void cbSVWindow::GenerateWatchesRecursive(wxPGProperty* prop, cbDebuggerPlugin *dbg)
@@ -293,11 +310,11 @@ void cbSVWindow::GenerateWatchesRecursive(wxPGProperty* prop, cbDebuggerPlugin *
         if(prop->IsExpanded() && watch_itr == m_RegisterWatches.end() )
         {
             RegisterWatch watch;
-            svPGPeripheryProp* per = dynamic_cast<svPGPeripheryProp*>(prop);
-            if(per != nullptr)
+            svPGBaseProp* base = dynamic_cast<svPGBaseProp*>(prop);
+            if(base != nullptr)
             {
                 watch.m_property = prop;
-                watch.m_watch    = dbg->AddMemoryRange( per->GetAddress() , per->GetSize(), wxEmptyString );
+                watch.m_watch    = dbg->AddMemoryRange(  base->GetAddress() , base->GetSize(), wxEmptyString );
 
                 m_RegisterWatches.push_back(watch);
             }
@@ -337,6 +354,8 @@ std::list<RegisterWatch>::iterator  cbSVWindow::FindWatchFromProperty(wxPGProper
 
 void cbSVWindow::OnDebuggerStarted()
 {
+    try
+    {
     wxPGProperty* root = m_pg_first_page->GetRoot();
     size_t child_count = root->GetChildCount();
     cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
@@ -345,27 +364,28 @@ void cbSVWindow::OnDebuggerStarted()
     {
         GenerateWatchesRecursive(root->Item(i), dbg);
     }
+
+    } catch (const std::length_error& le)
+    {
+        Manager::Get()->GetLogManager()->LogError(cbC2U(le.what()));
+    }
 }
 
 void cbSVWindow::OnItemExpand(wxPropertyGridEvent &evt)
 {
     cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
-    wxPGProperty* prop = evt.GetProperty();;
+    wxPGProperty* prop = evt.GetProperty();
 
     bool isPeriphery = prop->IsKindOf(CLASSINFO(svPGPeripheryProp) );
     if(dbg->IsRunning() && isPeriphery)
     {
+        svPGBaseProp* base = dynamic_cast<svPGBaseProp*>(prop);
         UpdateWorkingStat(WORKING_STAT_UPDATING);
-        svPGPropBase* regBase = dynamic_cast<svPGPropBase*>(prop);
-        if(regBase == nullptr)
-        {
-            Manager::Get()->GetLogManager()->LogError(_T("cbSVWindow::GenerateWatchesRecursive: if(regBase == nullptr)"));
-            return;
-        }
 
         RegisterWatch watch;
+
         watch.m_property = prop;
-        watch.m_watch    = dbg->AddMemoryRange( regBase->GetAddress() , regBase->GetSize(), wxEmptyString );
+        watch.m_watch    = dbg->AddMemoryRange( base->GetAddress() , base->GetSize(), wxEmptyString );
 
         m_RegisterWatches.push_back(watch);
     }
@@ -390,7 +410,7 @@ void cbSVWindow::OnItemCollapsed(wxPropertyGridEvent &evt)
 
 void cbSVWindow::OnItemChanged(wxPropertyGridEvent &evt)
 {
-    svPGPropBase *prop = dynamic_cast<svPGPropBase*>(evt.GetProperty());
+    svPGData *prop = dynamic_cast<svPGData*>(evt.GetProperty());
    /* if (prop->IsKindOf(CLASSINFO(svPGPeripheryProp) ))
     {
         // we don't change register so do nothing
@@ -413,37 +433,37 @@ void cbSVWindow::OnItemChanged(wxPropertyGridEvent &evt)
 
 void cbSVWindow::OnRightClick(wxPropertyGridEvent &evt)
 {
-    svPGPropBase *prop = dynamic_cast<svPGPropBase*>(evt.GetProperty());
+    svPGBaseProp *prop = dynamic_cast<svPGBaseProp*>(evt.GetProperty());
     m_curSelProp = evt.GetProperty();
     wxMenu m;
     wxMenu* sub_view = nullptr;
     if (prop)
     {
         sub_view = new wxMenu();
-        if(prop->CanRepresent(svPGPropBase::REP_HEX))
+        if(prop->CanRepresent(REP_HEX))
             sub_view->AppendRadioItem(ID_MENU_VIEW_HEX, _("Hex"));
-        if(prop->CanRepresent(svPGPropBase::REP_DEC))
+        if(prop->CanRepresent(REP_DEC))
             sub_view->AppendRadioItem(ID_MENU_VIEW_DEC, _("Dec"));
-        if(prop->CanRepresent(svPGPropBase::REP_UDEC))
+        if(prop->CanRepresent(REP_UDEC))
             sub_view->AppendRadioItem(ID_MENU_VIEW_UDEC, _("unsigned dec"));
-        if(prop->CanRepresent(svPGPropBase::REP_BIN))
+        if(prop->CanRepresent(REP_BIN))
             sub_view->AppendRadioItem(ID_MENU_VIEW_BIN, _("bin"));
-        if(prop->CanRepresent(svPGPropBase::REP_CHAR))
+        if(prop->CanRepresent(REP_CHAR))
             sub_view->AppendRadioItem(ID_MENU_VIEW_CHAR, _("char"));
-        if(prop->CanRepresent(svPGPropBase::REP_FLOAT))
+        if(prop->CanRepresent(REP_FLOAT))
             sub_view->AppendRadioItem(ID_MENU_VIEW_FLOAT, _("float"));
 
-        if(prop->GetRepresentation() == svPGPropBase::REP_HEX)
+        if(prop->GetRepresentation() == REP_HEX)
             sub_view->Check(ID_MENU_VIEW_HEX, true);
-        if(prop->GetRepresentation() == svPGPropBase::REP_DEC)
+        if(prop->GetRepresentation() == REP_DEC)
             sub_view->Check(ID_MENU_VIEW_DEC, true);
-        if(prop->GetRepresentation() == svPGPropBase::REP_UDEC)
+        if(prop->GetRepresentation() == REP_UDEC)
             sub_view->Check(ID_MENU_VIEW_UDEC, true);
-        if(prop->GetRepresentation() == svPGPropBase::REP_BIN)
+        if(prop->GetRepresentation() == REP_BIN)
             sub_view->Check(ID_MENU_VIEW_BIN, true);
-        if(prop->GetRepresentation() == svPGPropBase::REP_CHAR)
+        if(prop->GetRepresentation() == REP_CHAR)
             sub_view->Check(ID_MENU_VIEW_CHAR, true);
-        if(prop->GetRepresentation() == svPGPropBase::REP_FLOAT)
+        if(prop->GetRepresentation() == REP_FLOAT)
             sub_view->Check(ID_MENU_VIEW_FLOAT, true);
 
     }
@@ -458,7 +478,11 @@ void cbSVWindow::OnRightClick(wxPropertyGridEvent &evt)
 void cbSVWindow::OnContextMenu(wxCommandEvent& evt)
 {
     long id = evt.GetId();
-    svPGPropBase *propBase = dynamic_cast<svPGPropBase*>(m_curSelProp);
+
+    if(m_curSelProp == nullptr)
+        return;
+
+    svPGBaseProp *propBase = dynamic_cast<svPGBaseProp*>(m_curSelProp);
 
     if (id == ID_MENU_COLLAPSE)
     {
@@ -478,22 +502,22 @@ void cbSVWindow::OnContextMenu(wxCommandEvent& evt)
         return;
 
 	if ( id == ID_MENU_VIEW_HEX)
-	    propBase->SetRepresentation(svPGPropBase::REP_HEX);
+	    propBase->SetRepresentation(REP_HEX);
 
 	else if ( id == ID_MENU_VIEW_BIN)
-        propBase->SetRepresentation(svPGPropBase::REP_BIN);
+        propBase->SetRepresentation(REP_BIN);
 
 	else if ( id == ID_MENU_VIEW_DEC)
-        propBase->SetRepresentation(svPGPropBase::REP_DEC);
+        propBase->SetRepresentation(REP_DEC);
 
 	else if ( id == ID_MENU_VIEW_UDEC)
-        propBase->SetRepresentation(svPGPropBase::REP_UDEC);
+        propBase->SetRepresentation(REP_UDEC);
 
 	else if ( id == ID_MENU_VIEW_FLOAT)
-        propBase->SetRepresentation(svPGPropBase::REP_FLOAT);
+        propBase->SetRepresentation(REP_FLOAT);
 
 	else if ( id == ID_MENU_VIEW_CHAR)
-        propBase->SetRepresentation(svPGPropBase::REP_CHAR);
+        propBase->SetRepresentation(REP_CHAR);
 
 }
 
