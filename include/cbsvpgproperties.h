@@ -297,6 +297,10 @@ class svPGPeripheryProp : public svPGBaseProp
         virtual void SetDataFromString(const wxString& str);        /**< Not supported in this property */
 
         virtual wxString ValueToString( wxVariant& value, int argFlags ) const { return wxEmptyString; };
+        #if !wxCHECK_VERSION(3,0,0)
+        virtual wxString GetValueAsString(int argFlags) const;
+        #endif
+
         virtual bool StringToValue( wxVariant& variant, const wxString& text, int argFlags ) {};
 
         virtual void RefreshChildren();
@@ -342,6 +346,9 @@ class svPGRegisterProp : public svPGBaseProp
         virtual void SetDataFromBinary(const wxString& str);
 
         virtual wxString ValueToString( wxVariant& value, int argFlags ) const;
+        #if !wxCHECK_VERSION(3,0,0)
+        virtual wxString GetValueAsString(int argFlags) const;
+        #endif
         virtual bool StringToValue( wxVariant& variant, const wxString& text, int argFlags ) {};
 
         virtual void RefreshChildren();
@@ -379,6 +386,9 @@ class svPGEnumFieldProp : public svPGBaseProp
         virtual int GetChoiceSelection() const;
 
         virtual wxString ValueToString( wxVariant& value, int argFlags ) const;
+        #if !wxCHECK_VERSION(3,0,0)
+        virtual wxString GetValueAsString(int argFlags) const;
+        #endif
         virtual bool StringToValue( wxVariant& variant, const wxString& text, int argFlags );
 
     protected:
@@ -403,6 +413,9 @@ class svPGValueProp : public svPGBaseProp
         virtual ~svPGValueProp()    {};
 
         virtual wxString ValueToString( wxVariant& value, int argFlags ) const;
+        #if !wxCHECK_VERSION(3,0,0)
+        virtual wxString GetValueAsString(int argFlags) const;
+        #endif
         virtual bool StringToValue( wxVariant& variant, const wxString& text, int argFlags );
 
     protected:
@@ -421,12 +434,18 @@ class svPGBitProp : public svPGBaseProp
         virtual ~svPGBitProp()      {};
 
         wxString ValueToString( wxVariant& value, int argFlags ) const;
+        #if !wxCHECK_VERSION(3,0,0)
+        virtual wxString GetValueAsString(int argFlags) const;
+        virtual int GetChoiceInfo(wxPGChoiceInfo *choiceinfo);
+        #endif
         bool StringToValue( wxVariant& variant, const wxString& text, int argFlags );
 
         virtual int GetChoiceSelection() const;
         bool IsValueUnspecified() const;
 
         void SetDataFromBinary(const wxString& str);
+
+
 
     protected:
 

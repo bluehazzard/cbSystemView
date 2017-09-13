@@ -38,7 +38,7 @@ const svPGData& svPGDataRefFromVariant( const wxVariant& variant )
                                    variant.GetType().c_str()));
     svPGDataVariantData *data =
         (svPGDataVariantData*) variant.GetData();
-    return data->GetValue();
+    return data->GetValueRef();
 }
 #endif // wxCHECK_VERSION
 
@@ -210,6 +210,13 @@ void svPGPeripheryProp::SetDataFromBinary(const wxString& str)
     RefreshChildren();
 }
 
+#if !wxCHECK_VERSION(3,0,0)
+wxString svPGPeripheryProp::GetValueAsString(int argFlags) const
+{
+    return wxEmptyString;
+}
+#endif
+
 void svPGPeripheryProp::SetRegisterChanged(svPGRegisterProp* reg)
 {
     m_RegisterChanged = reg;
@@ -354,6 +361,20 @@ wxString svPGRegisterProp::ValueToString( wxVariant& value, int argFlags ) const
     //data.SetData(raw_data);
     return data.GetDataReadable(m_rep, GetBitSize());
 }
+
+#if !wxCHECK_VERSION(3,0,0)
+wxString svPGRegisterProp::GetValueAsString(int argFlags) const
+{
+    if (m_value.GetType() != wxT("svPGData"))
+    {
+        return m_value.GetString();
+    } else {
+        const svPGData& data = svPGDataRefFromVariant(m_value);
+        return data.GetDataReadable(m_rep, GetBitSize());
+    }
+
+}
+#endif
 
 void svPGRegisterProp::SetDataFromBinary(const wxString& str)
 {
@@ -516,6 +537,35 @@ wxString svPGEnumFieldProp::ValueToString( wxVariant& value, int argFlags ) cons
 
 }
 
+#if !wxCHECK_VERSION(3,0,0)
+wxString svPGEnumFieldProp::GetValueAsString(int argFlags) const
+{
+    wxString ret;
+    if(m_value.GetType() == wxT("svPGData") )
+    {
+        const svPGData& data = svPGDataRefFromVariant(m_value);
+        auto itr = m_elements.begin();
+        for(; itr != m_elements.end(); ++itr)
+        {
+            if(itr->value == data.GetData())
+            {
+                ret = itr->text;
+                break;
+            }
+
+        }
+    }
+    else
+    {
+        long sel = m_value.GetLong();
+        if(sel >= 0 && sel < m_elements.size())
+            ret = m_elements[sel].text;
+    }
+    return ret;
+}
+#endif
+
+
 bool svPGEnumFieldProp::StringToValue( wxVariant& variant, const wxString& text, int argFlags )
 {
     svPGData& data = svPGDataRefFromVariant(variant);
@@ -604,6 +654,20 @@ wxString svPGValueProp::ValueToString( wxVariant& value, int argFlags ) const
     return ret;
 }
 
+#if !wxCHECK_VERSION(3,0,0)
+wxString svPGValueProp::GetValueAsString(int argFlags) const
+{
+    if (m_value.GetType() != wxT("svPGData"))
+    {
+        return m_value.GetString();
+    } else {
+        const svPGData& data = svPGDataRefFromVariant(m_value);
+        return data.GetDataReadable(m_rep, GetBitSize());
+    }
+
+}
+#endif
+
 bool svPGValueProp::StringToValue( wxVariant& variant, const wxString& text, int argFlags )
 {
     svPGData& data = svPGDataRefFromVariant(variant);
@@ -679,7 +743,40 @@ wxString svPGBitProp::ValueToString( wxVariant& value, int argFlags ) const
     //return ret;
 }
 
-bool svPGBitProp::IsValueUnspecified() const
+#if !wxCHECK_VERSION(3,0,0)
+wxString svPGBitProp::GetValueAsString(int argFlags) const
+{
+    if (m_value.GetType() != wxT("svPGData"))
+    {
+        return m_value.GetString();
+    } else {
+        const svPGData& data = svPGDataRefFromVariant(m_value);
+        if(data.GetData())
+            return wxT("1");
+        else
+            return wxT("0");
+    }
+}
+
+int svPGBitProp::GetChoiceInfo(wxPGChoiceInfo *choiceinfo)
+{
+if (m_value.GetType() != wxT("svPGData"))
+    {
+        if( m_value.GetLong() == 0)
+            return 0;
+        else
+            return 1;
+    } else {
+        const svPGData& data = svPGDataRefFromVariant(m_value);
+        if(!data.GetData())
+            return 0;
+        else
+            return 1;
+    }
+}
+#endif
+
+bool svPGBitProp::svPGBitProp::IsValueUnspecified() const
 {
     return false;
 }
