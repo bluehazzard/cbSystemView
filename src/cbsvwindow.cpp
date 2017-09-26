@@ -242,10 +242,17 @@ void cbSVWindow::PopulateGrid()
     auto itr_per = m_device->GetPeriperyBegin();
     for(;itr_per != m_device->GetPeriperyEnd(); ++itr_per)
     {
+        #if wxCHECK_VERSION(3,0,0)
         svPGPeripheryProp* prop = new svPGPeripheryProp(*(*itr_per).get());
         m_pg_first_page->Append(prop);
+        #else
+        svPGPeripheryProp* prop = new svPGPeripheryProp(*(*itr_per).get(), m_pg_first_page->GetGrid());
+        #endif
+
         prop->Populate();
     }
+
+    m_pg_first_page->CollapseAll();
 }
 
 void cbSVWindow::OnDebuggerContinued()
@@ -418,11 +425,12 @@ void cbSVWindow::OnItemCollapsed(wxPropertyGridEvent &evt)
 
 void cbSVWindow::OnItemChanged(wxPropertyGridEvent &evt)
 {
-    svPGData *prop = dynamic_cast<svPGData*>(evt.GetProperty());
-   /* if (prop->IsKindOf(CLASSINFO(svPGPeripheryProp) ))
+    svPGBaseProp* prop = dynamic_cast<svPGBaseProp*>(evt.GetProperty());
+    if (prop->IsKindOf(CLASSINFO(svPGPeripheryProp) ))
     {
-        // we don't change register so do nothing
-        prop = dynamic_cast<svPGPeripheryProp*>(prop)->GetRegisterChanged();
+        // we don't change periphery so do nothing
+        //prop = dynamic_cast<svPGPeripheryProp*>(prop)->GetRegisterChanged();
+        return;
     }
     // Try to get the register
 
@@ -433,10 +441,10 @@ void cbSVWindow::OnItemChanged(wxPropertyGridEvent &evt)
 
     uint64_t da = prop->GetData();
     wxString data;
-    data.From8BitData((char*) &da, sizeof(uint64_t));
+    data = wxString::From8BitData((char*) &da, prop->GetSize());
 
     dbg->SetWatchValue(watch.m_watch, data);
-    m_TempRegisterWatches.push_back(watch);*/
+    m_TempRegisterWatches.push_back(watch);
 }
 
 void cbSVWindow::OnRightClick(wxPropertyGridEvent &evt)

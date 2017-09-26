@@ -40,7 +40,36 @@ const svPGData& svPGDataRefFromVariant( const wxVariant& variant )
         (svPGDataVariantData*) variant.GetData();
     return data->GetValueRef();
 }
+
+#define wxPG_VARIANT_TYPE_LONG  wxS("long")
+#define wxPG_VARIANT_TYPE_BOOL  wxS("bool")
 #endif // wxCHECK_VERSION
+
+bool getDataFromVariant(wxVariant& variant, svPGData& data )
+{
+    uint64_t da = 0;
+    wxString type = variant.GetType();
+    if(type == wxPG_VARIANT_TYPE_BOOL)
+    {
+        if(variant.GetBool())
+            data.SetData(1);
+        else
+            data.SetData(0);
+
+        return true;
+    }
+    else if (type == wxPG_VARIANT_TYPE_LONG)
+    {
+         data.SetData(variant.GetLong());
+         return true;
+    }
+    else if (type == wxT("svPGData"))
+    {
+        data = svPGDataRefFromVariant(variant);
+        return true;
+    }
+    return false;
+};
 
 
 void svPGBaseProp::SetDataFromBinary(const wxString& str)
@@ -61,6 +90,15 @@ void svPGBaseProp::GetDataToBinary(wxString& str)
 void svPGBaseProp::SetData(uint64_t data)
 {
 
+}
+
+uint64_t svPGBaseProp::GetData()
+{
+    if(m_value.GetType() != wxT("svPGData"))
+        return 0;
+
+    svPGData& data = svPGDataRefFromVariant(m_value);
+    return data.GetData();
 }
 
 
@@ -130,16 +168,23 @@ void svPGData::SetDataFromString(const wxString& str)
 WX_PG_IMPLEMENT_PROPERTY_CLASS(svPGPeripheryProp, svPGBaseProp,
                                svPGData, const svPGData&,
                                TextCtrl)
-
+#if wxCHECK_VERSION(3,0,0)
 svPGPeripheryProp::svPGPeripheryProp(SVDPeriphery &per) : svPGBaseProp( per )
-
+#else
+svPGPeripheryProp::svPGPeripheryProp(SVDPeriphery &per, wxPropertyGrid* parent) : svPGBaseProp( per )
+#endif
 {
     svPGData value(per.GetResetValue());
+
+    //SetFlag(wxPG_PROP_CATEGORY);
 
     uint64_t size       = 0;
     uint64_t bitSize    = 0;
 
     wxString desc = per.GetDesc();
+    #if !wxCHECK_VERSION(3,0,0)
+    parent->Append(this);
+    #endif
 
     desc << wxString::Format(wxT("\nAddress: 0x%llx\n"), GetAddress());
     desc << wxString::Format(wxT("Reset value: 0x%llx\n"), GetResetVal() & GetResetMask());
@@ -155,7 +200,8 @@ svPGPeripheryProp::svPGPeripheryProp(SVDPeriphery &per) : svPGBaseProp( per )
         bitSize   += reg->GetSize();      // site in bits
 
         svPGRegisterProp* prop = new svPGRegisterProp(*reg, per);
-        AddChild(prop);
+
+        AppendChild(prop);
     }
 
     SetSize(size);
@@ -269,6 +315,8 @@ svPGRegisterProp::svPGRegisterProp(const SVDRegister &reg, const SVDPeriphery &p
     SetBitFlag(m_repCap, REP_HEX, REP_BIN); // We can represent the Data in hex or binary, other values make no sense?
     m_rep = REP_HEX;
 
+    //SetFlag(wxPG_PROP_MISC_PARENT);
+
     svPGData value(reg.GetResetValue());
 
     wxString desc = reg.GetDesc();
@@ -298,7 +346,7 @@ svPGRegisterProp::svPGRegisterProp(const SVDRegister &reg, const SVDPeriphery &p
             prop = new svPGValueProp(*field);
         }
 
-        AddPrivateChild(prop);
+        AddChild(prop);
     }
 
     desc << wxString::Format(wxT("\nAddress: 0x%llx\n"), GetAddress());
@@ -355,10 +403,10 @@ void svPGRegisterProp::Populate()
 
 wxString svPGRegisterProp::ValueToString( wxVariant& value, int argFlags ) const
 {
+    svPGData data;
+    if(getDataFromVariant(value, data)== false)
+        return wxEmptyString;
 
-    //uint64_t raw_data = GetDataFromChildren();
-    svPGData& data = svPGDataRefFromVariant(value);
-    //data.SetData(raw_data);
     return data.GetDataReadable(m_rep, GetBitSize());
 }
 
@@ -397,12 +445,34 @@ void svPGRegisterProp::ChildChanged( wxVariant& thisValue, int childIndex, wxVar
 {
 // TODO (bluehazzard#1#): Implement this properly
     svPGData& data = svPGDataRefFromVariant(thisValue);
-    svPGData& childData = svPGDataRefFromVariant(childValue);
+
+    uint64_t CData = 0;
+    wxString str = childValue.GetType();
+
+    if(str == wxT("bool"))
+    {
+        if(childValue.GetBool())
+            CData = 1;
+        else
+            CData = 0;
+    }
+    else if (str == wxT("long"))
+    {
+        CData = childValue.GetLong();
+    }
+    else if(str == wxT("svPGData"))
+    {
+        svPGData& childData = svPGDataRefFromVariant(childValue);
+        CData = childData.GetData();
+    }
+    switch(childIndex)
+    {
+
+    }
 
     svPGBaseProp* child = dynamic_cast<svPGBaseProp*>(Item(childIndex));
     uint64_t mask = child->GetMask();
     uint64_t offset = child->GetBitOffset();
-    uint64_t CData = childData.GetData();
 
     uint64_t PData = data.GetData();
     PData &= ~ mask;
@@ -429,26 +499,42 @@ void svPGRegisterProp::SetData( uint64_t data )
 
 void svPGRegisterProp::RefreshChildren()
 {
+    if(m_value.GetType() != wxT("svPGData"))
+        return;
+
     svPGData& data = svPGDataRefFromVariant(m_value);
     int count = GetChildCount();
     for(int i = 0; i < count; ++i)
     {
         svPGBaseProp* child = dynamic_cast<svPGBaseProp*>(Item(i));
         svPGData child_data;
-        if (child->GetValue().GetType() != wxT("svPGData"))
+        const wxString& type = child->GetValue().GetType();
+        if (type == wxPG_VARIANT_TYPE_LONG )
         {
-
-            child_data.SetData( (child->GetValue().GetLong() & child->GetMask()) >> child->GetBitOffset());
+            child_data.SetData( child->GetValue().GetLong());
         }
-        else
+        else if(type == wxT("svPGData") )
         {
-            //child_data = svPGData(svPGDataRefFromVariant(child->GetValue()));
-            child_data = svPGData();
-            child_data.SetData( (data.GetData() & child->GetMask()) >> child->GetBitOffset());
+            child_data = svPGDataRefFromVariant(child->GetValue());
+        }
+        else if(type == wxPG_VARIANT_TYPE_BOOL)
+        {
+            child_data.SetData( child->GetValue().GetBool() == true  ? 1 : 0);
         }
 
+
+        uint64_t childMask = child->GetMask();
+        uint64_t childOffset = child->GetBitOffset();
+
+        uint64_t oldData = child_data.GetData();
+        uint64_t newData = (data.GetData() & childMask) >>  childOffset;
+
+        if(oldData != newData)
+            child->ChangeFlag( wxPG_PROP_MODIFIED, true );
+
+        svPGData newPGData(newData);
         wxVariant var;
-        var << child_data;
+        var << newPGData;
         child->SetValue(var, 0, 0);
         //SetValue(var,0,0);
         //m_value = var;
@@ -566,26 +652,30 @@ wxString svPGEnumFieldProp::GetValueAsString(int argFlags) const
 #endif
 
 
-bool svPGEnumFieldProp::StringToValue( wxVariant& variant, const wxString& text, int argFlags )
+bool svPGEnumFieldProp::StringToValue( wxVariant& variant, const wxString& text, int argFlags ) const
 {
     svPGData& data = svPGDataRefFromVariant(variant);
     uint64_t old_data = data.GetData();
     uint64_t num = data.GetData();
 
     auto itr = m_elements.begin();
-    for(; itr != m_elements.end(); ++itr)
+    for(; itr != m_elements.end(); itr++)
     {
         if( itr->text == text)
+        {
             num = itr->value;
+            break;
+        }
+
     }
 
 
     data.SetData( num & (GetMask() >> GetBitOffset() ));  // Mask the data
 
     if(old_data == data.GetData())
-        return true;
-    else
         return false;
+    else
+        return true;
 }
 
 void svPGEnumFieldProp::Populate()
@@ -604,7 +694,8 @@ void svPGEnumFieldProp::Populate()
 
 int svPGEnumFieldProp::GetChoiceSelection() const
 {
-    if(m_value.GetType() == wxT("svPGData"))
+    wxString type = m_value.GetType();
+    if(type == wxT("svPGData"))
     {
         const svPGData& data = svPGDataRefFromVariant(m_value);
         uint64_t da = data.GetData();
@@ -617,11 +708,42 @@ int svPGEnumFieldProp::GetChoiceSelection() const
             i++;
         }
     }
-    else
-        return m_value.GetInteger();
+    else if(type == wxPG_VARIANT_TYPE_LONG)
+    {
+        return m_value.GetLong();
+    }
+    else if(type == wxPG_VARIANT_TYPE_BOOL)
+    {
+        return m_value.GetBool() == true ? 1 : 0;
+    }
+
 
 }
 
+
+bool svPGEnumFieldProp::IntToValue( wxVariant &	variant, int number, int argFlags ) const
+{
+    wxString type = variant.GetType();
+    if(type != wxT("svPGData"))
+    {
+        svPGData data;
+        variant << data;
+    }
+
+    svPGData& data = svPGDataRefFromVariant(variant);
+
+    if(number < 0 || number >= m_elements.size())
+        return false; //todo: ASSERT
+
+    uint64_t oldData = data.GetData();
+    uint64_t newData = m_elements[number].value;
+    data.SetData(newData);
+
+    if(oldData != newData)
+        return true;
+    else
+        return false;
+}
 
 WX_PG_IMPLEMENT_PROPERTY_CLASS(svPGValueProp, svPGBaseProp,
                                svPGData, const svPGData&,
@@ -668,7 +790,7 @@ wxString svPGValueProp::GetValueAsString(int argFlags) const
 }
 #endif
 
-bool svPGValueProp::StringToValue( wxVariant& variant, const wxString& text, int argFlags )
+bool svPGValueProp::StringToValue( wxVariant& variant, const wxString& text, int argFlags ) const
 {
     svPGData& data = svPGDataRefFromVariant(variant);
     uint64_t old_data = data.GetData();
@@ -678,20 +800,28 @@ bool svPGValueProp::StringToValue( wxVariant& variant, const wxString& text, int
     wxString number;
     if(text.StartsWith(wxT("0x"),&number))
     {
+        #if wxCHECK_VERSION(3,0,0)
         number.ToLongLong(&num,16);
+        #else
+        num = std::stoull(number.c_str(),0,16);
+        #endif
     }
     else
     {
+        #if wxCHECK_VERSION(3,0,0)
         text.ToLongLong(&num,10);
+        #else
+        num = std::stoull(text.c_str(), 0, 10);
+        #endif
     }
 
 
     data.SetData( num & (GetMask() >> GetBitOffset() ));  // Mask the data
 
     if(old_data == data.GetData())
-        return true;
-    else
         return false;
+    else
+        return true;
 }
 
 
@@ -699,8 +829,6 @@ bool svPGValueProp::StringToValue( wxVariant& variant, const wxString& text, int
 WX_PG_IMPLEMENT_PROPERTY_CLASS(svPGBitProp, svPGBaseProp,
                                svPGData, const svPGData&,
                                CheckBox)
-
-//IMPLEMENT_ABSTRACT_CLASS(svPGBitProp, svPGBaseProp)
 
 svPGBitProp::svPGBitProp(const SVDField &field) : svPGBaseProp( field )
 {
@@ -725,11 +853,19 @@ svPGBitProp::svPGBitProp(const SVDField &field) : svPGBaseProp( field )
 
 int svPGBitProp::GetChoiceSelection() const
 {
-    const svPGData& data = svPGDataRefFromVariant(m_value);
-    if(data.GetData())
-        return 1;
-    else
-        return 0;
+    wxString type = m_value.GetType();
+    if (type == wxT("svPGData"))
+    {
+        const svPGData& data = svPGDataRefFromVariant(m_value);
+        if(data.GetData())
+            return 1;
+        else
+            return 0;
+
+    } else if(type == wxPG_VARIANT_TYPE_BOOL)
+    {
+        return m_value.GetBool();
+    }
 }
 
 wxString svPGBitProp::ValueToString( wxVariant& value, int argFlags ) const
@@ -739,8 +875,6 @@ wxString svPGBitProp::ValueToString( wxVariant& value, int argFlags ) const
         return wxT("1");
     else
         return wxT("0");
-    //wxString ret = data.GetDataReadable(m_rep);
-    //return ret;
 }
 
 #if !wxCHECK_VERSION(3,0,0)
@@ -760,7 +894,7 @@ wxString svPGBitProp::GetValueAsString(int argFlags) const
 
 int svPGBitProp::GetChoiceInfo(wxPGChoiceInfo *choiceinfo)
 {
-if (m_value.GetType() != wxT("svPGData"))
+    if (m_value.GetType() != wxT("svPGData"))
     {
         if( m_value.GetLong() == 0)
             return 0;
@@ -776,7 +910,7 @@ if (m_value.GetType() != wxT("svPGData"))
 }
 #endif
 
-bool svPGBitProp::svPGBitProp::IsValueUnspecified() const
+bool svPGBitProp::IsValueUnspecified() const
 {
     return false;
 }
@@ -797,7 +931,6 @@ void svPGBitProp::SetDataFromBinary(const wxString& str)
     wxVariant var;
     var << Data;
     SetValue(var, 0, 0);
-    //m_value = var;
 }
 
 bool svPGBitProp::StringToValue( wxVariant& variant, const wxString& text, int argFlags )
@@ -816,6 +949,32 @@ bool svPGBitProp::StringToValue( wxVariant& variant, const wxString& text, int a
         return true;
     else
         return false;
+}
+
+bool svPGBitProp::IntToValue( wxVariant& variant, int number, int argFlags ) const
+{
+    wxString type = variant.GetType();
+    if(type != wxT("svPGData"))
+    {
+        svPGData data;
+        variant << data;
+    }
+
+    svPGData& data = svPGDataRefFromVariant(variant);
+    if(number == 0)
+        data.SetData(0);
+    else
+        data.SetData(1);
+    return true;
+}
+
+void svPGBitProp::SetChoiceSelection(int newValue)
+{
+    svPGData& data = svPGDataRefFromVariant(m_value);
+    if(newValue == 0)
+        data.SetData(0);
+    else
+        data.SetData(1);
 }
 
 wxString printBits(size_t const size, uint64_t data)

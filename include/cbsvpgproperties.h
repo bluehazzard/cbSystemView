@@ -59,12 +59,12 @@ class svPGBaseProp : public wxPGProperty
 public:
     svPGBaseProp() : wxPGProperty()
     {
-        ClearFlag(wxPG_PROP_COMPOSED_VALUE);
+
     };
 
     svPGBaseProp(const wxString& name, const wxString& label) : wxPGProperty(name,label)
     {
-        ClearFlag(wxPG_PROP_COMPOSED_VALUE);
+
     };
 
     svPGBaseProp(const  SVDRegisterProperties* base, wxPGProperty* prop)
@@ -125,6 +125,7 @@ public:
 
     virtual void GetDataToBinary(wxString& str);
     virtual void SetData(uint64_t data);
+    virtual uint64_t GetData();
 
     std::bitset<REP_LAST_FLAG> m_repCap;    /**< Flag list for all ValueRepresentation */
     ValueRepresentation m_rep;              /**< current representation  */
@@ -287,7 +288,11 @@ class svPGPeripheryProp : public svPGBaseProp
     public:
 
         svPGPeripheryProp()                             {};
+        #if wxCHECK_VERSION(3,0,0)
         svPGPeripheryProp(SVDPeriphery &per);
+        #else
+        svPGPeripheryProp(SVDPeriphery &per, wxPropertyGrid* parent);
+        #endif
         virtual ~svPGPeripheryProp();
 
         virtual void SetData(uint64_t data );
@@ -389,7 +394,8 @@ class svPGEnumFieldProp : public svPGBaseProp
         #if !wxCHECK_VERSION(3,0,0)
         virtual wxString GetValueAsString(int argFlags) const;
         #endif
-        virtual bool StringToValue( wxVariant& variant, const wxString& text, int argFlags );
+        virtual bool StringToValue( wxVariant& variant, const wxString& text, int argFlags ) const;
+        virtual bool IntToValue( wxVariant&  variant, int number,int argFlags = 0) const;
 
     protected:
 
@@ -416,7 +422,7 @@ class svPGValueProp : public svPGBaseProp
         #if !wxCHECK_VERSION(3,0,0)
         virtual wxString GetValueAsString(int argFlags) const;
         #endif
-        virtual bool StringToValue( wxVariant& variant, const wxString& text, int argFlags );
+        virtual bool StringToValue( wxVariant& variant, const wxString& text, int argFlags ) const;
 
     protected:
 
@@ -439,6 +445,8 @@ class svPGBitProp : public svPGBaseProp
         virtual int GetChoiceInfo(wxPGChoiceInfo *choiceinfo);
         #endif
         bool StringToValue( wxVariant& variant, const wxString& text, int argFlags );
+        virtual bool IntToValue( wxVariant& variant, int number, int argFlags ) const;
+        virtual void SetChoiceSelection(int newValue);
 
         virtual int GetChoiceSelection() const;
         bool IsValueUnspecified() const;
