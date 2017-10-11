@@ -377,7 +377,11 @@ struct svPGEnumFieldElement
     uint64_t value;
 };
 
+#if !wxCHECK_VERSION(3, 0, 0)
+class svPGEnumFieldProp : public svPGBaseProp, public wxEnumProperty
+#else
 class svPGEnumFieldProp : public svPGBaseProp
+#endif
 {
         WX_PG_DECLARE_PROPERTY_CLASS(svPGEnumFieldProp);
 
@@ -396,6 +400,10 @@ class svPGEnumFieldProp : public svPGBaseProp
         #endif
         virtual bool StringToValue( wxVariant& variant, const wxString& text, int argFlags ) const;
         virtual bool IntToValue( wxVariant&  variant, int number,int argFlags = 0) const;
+
+        #if !wxCHECK_VERSION(3, 0, 0)
+        virtual int GetChoiceInfo( wxPGChoiceInfo* choiceinfo );
+        #endif
 
     protected:
 

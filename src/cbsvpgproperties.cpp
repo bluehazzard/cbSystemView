@@ -4,6 +4,8 @@
 #include <cbcolourmanager.h>
 #include <logmanager.h>
 
+#define LOG_UNEXPECTED_ERROR(E)    Manager::Get()->GetLogManager()->LogError( wxString::FromUTF8(__PRETTY_FUNCTION__) + wxT(": ") + E)
+
 class svPGData;
 
 IMPLEMENT_DYNAMIC_CLASS(svPGData, wxObject)
@@ -45,7 +47,7 @@ const svPGData& svPGDataRefFromVariant( const wxVariant& variant )
 #define wxPG_VARIANT_TYPE_BOOL  wxS("bool")
 #endif // wxCHECK_VERSION
 
-bool getDataFromVariant(wxVariant& variant, svPGData& data )
+bool getDataFromVariant(const wxVariant& variant, svPGData& data )
 {
     uint64_t da = 0;
     wxString type = variant.GetType();
@@ -240,13 +242,13 @@ void svPGPeripheryProp::Populate()
 void svPGPeripheryProp::SetData(uint64_t data )
 {
     // Not supported...
-    Manager::Get()->GetLogManager()->LogError(_("svPGPeripheryProp::SetData: Not supported use SetDataFromBinary()"));
+    LOG_UNEXPECTED_ERROR(wxT("Not supported in svPGPeripheryProp"));
 }
 
 void svPGPeripheryProp::SetDataFromString(const wxString& str)
 {
     // Not supported...
-    Manager::Get()->GetLogManager()->LogError(_("svPGPeripheryProp::SetDataFromString: Not supported use SetDataFromBinary()"));
+    LOG_UNEXPECTED_ERROR(wxT("Not supported in svPGPeripheryProp"));
 }
 
 
@@ -284,11 +286,9 @@ void svPGPeripheryProp::RefreshChildren()
         svPGBaseProp* child = dynamic_cast<svPGBaseProp*>(Item(i));
         if(child == nullptr)
         {
-            Manager::Get()->GetLogManager()->LogError(_("svPGPeripheryProp::SetDataFromBinary: ") + Item(i)->GetName() + _(" child of ") + GetName() + _(" can not be casted to svPGData*"));
+            LOG_UNEXPECTED_ERROR( Item(i)->GetName() + _(" child of ") + GetName() + _(" can not be casted to svPGBaseProp*"));
             continue;
         }
-
-        //const svPGData& data = svPGDataRefFromVariant(child->GetValue());
 
         size_t out_size = child->GetSize();
         if(out_size > in_size-start)
@@ -298,13 +298,12 @@ void svPGPeripheryProp::RefreshChildren()
 
         memcpy(target_buff, buff.data() + start, out_size);
         start += out_size;
-        dynamic_cast<svPGBaseProp*>(Item(i))->SetDataFromBinary(wxString::From8BitData(target_buff,out_size));
+        child->SetDataFromBinary(wxString::From8BitData(target_buff,out_size));
+
         delete[] target_buff;
     }
 }
 
-
-//IMPLEMENT_DYNAMIC_CLASS(svPGRegisterProp, svPGBaseProp)
 
 WX_PG_IMPLEMENT_PROPERTY_CLASS(svPGRegisterProp, svPGBaseProp,
                                svPGData, const svPGData&,
@@ -314,8 +313,6 @@ svPGRegisterProp::svPGRegisterProp(const SVDRegister &reg, const SVDPeriphery &p
 {
     SetBitFlag(m_repCap, REP_HEX, REP_BIN); // We can represent the Data in hex or binary, other values make no sense?
     m_rep = REP_HEX;
-
-    //SetFlag(wxPG_PROP_MISC_PARENT);
 
     svPGData value(reg.GetResetValue());
 
@@ -404,7 +401,7 @@ void svPGRegisterProp::Populate()
 wxString svPGRegisterProp::ValueToString( wxVariant& value, int argFlags ) const
 {
     svPGData data;
-    if(getDataFromVariant(value, data)== false)
+    if(getDataFromVariant(value, data) == false)
         return wxEmptyString;
 
     return data.GetDataReadable(m_rep, GetBitSize());
@@ -413,14 +410,11 @@ wxString svPGRegisterProp::ValueToString( wxVariant& value, int argFlags ) const
 #if !wxCHECK_VERSION(3,0,0)
 wxString svPGRegisterProp::GetValueAsString(int argFlags) const
 {
-    if (m_value.GetType() != wxT("svPGData"))
-    {
-        return m_value.GetString();
-    } else {
-        const svPGData& data = svPGDataRefFromVariant(m_value);
-        return data.GetDataReadable(m_rep, GetBitSize());
-    }
+    svPGData data;
+    if(getDataFromVariant(m_value, data) == false)
+        return wxEmptyString;
 
+    return data.GetDataReadable(m_rep, GetBitSize());
 }
 #endif
 
@@ -443,44 +437,40 @@ wxVariant svPGRegisterProp::ChildChanged( wxVariant& thisValue, int childIndex, 
 void svPGRegisterProp::ChildChanged( wxVariant& thisValue, int childIndex, wxVariant& childValue ) const
 #endif // wxCHECK_VERSION
 {
-// TODO (bluehazzard#1#): Implement this properly
-    svPGData& data = svPGDataRefFromVariant(thisValue);
 
-    uint64_t CData = 0;
-    wxString str = childValue.GetType();
+    svPGData thisData;
+    if(getDataFromVariant(thisValue, thisData) == false)
+    {
+        LOG_UNEXPECTED_ERROR(wxT("thisValue can not be converted to svPGData"));
+        #if wxCHECK_VERSION(3,0,0)
+        return wxNullVariant;
+        #endif // wxCHECK_VERSION
+    }
 
-    if(str == wxT("bool"))
-    {
-        if(childValue.GetBool())
-            CData = 1;
-        else
-            CData = 0;
-    }
-    else if (str == wxT("long"))
-    {
-        CData = childValue.GetLong();
-    }
-    else if(str == wxT("svPGData"))
-    {
-        svPGData& childData = svPGDataRefFromVariant(childValue);
-        CData = childData.GetData();
-    }
-    switch(childIndex)
-    {
 
+    svPGData childData;
+    if(getDataFromVariant(childValue, childData) == false)
+    {
+        LOG_UNEXPECTED_ERROR(wxT("thisValue can not be converted to childValue"));
+        #if wxCHECK_VERSION(3,0,0)
+        return wxNullVariant;
+        #endif // wxCHECK_VERSION
     }
 
     svPGBaseProp* child = dynamic_cast<svPGBaseProp*>(Item(childIndex));
-    uint64_t mask = child->GetMask();
+    uint64_t mask   = child->GetMask();
     uint64_t offset = child->GetBitOffset();
 
-    uint64_t PData = data.GetData();
+    uint64_t PData = thisData.GetData();
     PData &= ~ mask;
-    PData |= (CData << offset) & mask;
-    data.SetData(PData);
+    PData |= (childData.GetData() << offset) & mask;
+
+    svPGData returnVal;
+    returnVal.SetData(PData);
 
     wxVariant newVariant;
-    newVariant << data;
+    newVariant << returnVal;
+    thisValue  << returnVal;
 
 #if wxCHECK_VERSION(3,0,0)
     return newVariant;    // dummy
@@ -489,12 +479,11 @@ void svPGRegisterProp::ChildChanged( wxVariant& thisValue, int childIndex, wxVar
 
 void svPGRegisterProp::SetData( uint64_t data )
 {
-    svPGData d;//(svPGDataRefFromVariant(m_value));
+    svPGData d;
     d.SetData(data);
     wxVariant tmp;
     tmp << d;
     SetValue(tmp, 0, 0);
-    //m_value = tmp;
 }
 
 void svPGRegisterProp::RefreshChildren()
@@ -690,6 +679,19 @@ void svPGEnumFieldProp::Populate()
 #endif
     }
 }
+
+#if !wxCHECK_VERSION(3, 0, 0)
+int svPGEnumFieldProp::GetChoiceInfo( wxPGChoiceInfo* choiceinfo )
+{
+    if ( choiceinfo )
+        choiceinfo->m_choices = &m_choices;
+
+    if ( !m_choices.IsOk() )
+        return -1;
+
+    return GetIndex();
+}
+#endif
 
 
 int svPGEnumFieldProp::GetChoiceSelection() const
