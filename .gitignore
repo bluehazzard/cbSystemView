@@ -1,0 +1,10 @@
+.objs
+plugin_wx30
+doxy
+output
+*.bmarks
+*.depend
+*.layout
+
+cbSystemView_build_log.html
+cbSystemView_unix_build_log.html

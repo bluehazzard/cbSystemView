@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="cbSystemView" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="cb_plugin_wx30">
+				<Option output="output/wx30/cbSystemView" prefix_auto="0" extension_auto="1" />
+				<Option object_output=".objs/cb_plugin_wx30" />
+				<Option type="3" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="`wx-config --cflags  --version=3.0`" />
+					<Add option="-g" />
+					<Add directory="$(#cb)/include" />
+					<Add directory="$(#cb)/sdk/wxscintilla/include" />
+					<Add directory="$(#cb)/include/tinyxml" />
+				</Compiler>
+				<Linker>
+					<Add option="`wx-config --libs  --version=3.0`" />
+					<Add library="codeblocks" />
+					<Add directory="$(#cb)/devel30" />
+				</Linker>
+				<ExtraCommands>
+					<Add after="mkdir -p plugin_wx30" />
+					<Add after="zip -j9 plugin_wx30/cbSystemView.zip manifest.xml" />
+					<Add after="zip -9 plugin_wx30/cbSystemView.zip images/*" />
+					<Add after="zip -j9 plugin_wx30/cbSystemView.zip res/*" />
+					<Add after="zip -j9 plugin_wx30/cbSystemView.cbplugin $(TARGET_OUTPUT_FILE) plugin_wx30/cbSystemView.zip" />
+					<Mode after="always" />
+				</ExtraCommands>
+			</Target>
+			<Target title="to_codeblocks_wx30">
+				<Option output="$(#cb)/devel30/share/codeblocks/plugins/cbSystemView" prefix_auto="0" extension_auto="1" />
+				<Option working_dir="$(#cb)/devel30" />
+				<Option object_output=".objs/to_codeblocks_wx30" />
+				<Option type="3" />
+				<Option compiler="gcc" />
+				<Option parameters="--debug-log --multiple-instance --no-splash-screen --verbose -p debug --no-ipc " />
+				<Option host_application="$(#cb)/devel30/codeblocks" />
+				<Option run_host_application_in_terminal="0" />
+				<Compiler>
+					<Add option="`wx-config --cflags  --version=3.0`" />
+					<Add option="-g" />
+					<Add directory="$(#cb)/include" />
+					<Add directory="$(#cb)/sdk/wxscintilla/include" />
+					<Add directory="$(#cb)/include/tinyxml" />
+				</Compiler>
+				<Linker>
+					<Add option="`wx-config --libs  --version=3.0`" />
+					<Add library="codeblocks" />
+					<Add directory="$(#cb)/devel30" />
+				</Linker>
+				<ExtraCommands>
+					<Add after="zip -j9 $(#cb)/devel30/share/codeblocks/cbSystemView.zip manifest.xml" />
+					<Add after="zip -9 $(#cb)/devel30/share/codeblocks/cbSystemView.zip images/*" />
+					<Add after="zip -j9 $(#cb)/devel30/share/codeblocks/cbSystemView.zip res/*.xrc" />
+					<Mode after="always" />
+				</ExtraCommands>
+			</Target>
+		</Build>
+		<VirtualTargets>
+			<Add alias="All" targets="cb_plugin_wx30;to_codeblocks_wx30;" />
+		</VirtualTargets>
+		<Compiler>
+			<Add option="-std=c++11" />
+			<Add option="-fPIC" />
+			<Add directory="include" />
+			<Add directory="." />
+		</Compiler>
+		<Linker>
+			<Add option="-Wl,--no-undefined" />
+		</Linker>
+		<Unit filename="cbSystemView.cpp" />
+		<Unit filename="cbSystemView.h" />
+		<Unit filename="include/ProjectConfigPanel.h" />
+		<Unit filename="include/cbsvdfilereader.h" />
+		<Unit filename="include/cbsvpgproperties.h" />
+		<Unit filename="include/cbsvwindow.h" />
+		<Unit filename="manifest.xml" />
+		<Unit filename="src/ProjectConfigPanel.cpp" />
+		<Unit filename="src/cbsvdfilereader.cpp" />
+		<Unit filename="src/cbsvpgproperties.cpp" />
+		<Unit filename="src/cbsvwindow.cpp" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+			<wxsmith version="1">
+				<resources>
+					<wxPanel wxs="wxsmith/ProjectConfigPanel.wxs" src="src/ProjectConfigPanel.cpp" hdr="include/ProjectConfigPanel.h" xrc="res/ProjectConfig.xrc" fwddecl="0" i18n="1" name="ProjectConfigPanel" language="CPP" />
+				</resources>
+			</wxsmith>
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

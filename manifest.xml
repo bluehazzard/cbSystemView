@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_plugin_manifest_file>
+    <SdkVersion major="1" minor="30"  release="0" />
+    <Plugin name="cbSystemView">
+        <Value title="cbSystemView" />
+        <Value version="0.1" />
+        <Value description="Plugin to support register view and SVD files in the debugger" />
+        <Value author="Bluehazzard" />
+        <Value authorEmail="bluehazzard2@gmail.com" />
+        <Value authorWebsite="" />
+        <Value thanksTo="" />
+        <Value license="GPL" />
+    </Plugin>
+</CodeBlocks_plugin_manifest_file>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<wxsmith>
+	<resource_extra>
+		<object root="1" />
+		<object name="ID_LISTBOX1" class="wxListBox" variable="m_lstTargets" member="yes">
+			<handler function="OnlstTargetsSelect" entry="EVT_LISTBOX" />
+		</object>
+		<object name="ID_TEXTCTRL1" class="wxTextCtrl" variable="m_CtrlSvdFilePath" member="yes" />
+		<object name="ID_BUTTON1" class="wxButton" variable="m_BtnBrowseSvdFilePath" member="yes">
+			<handler function="OnBtnBrowseSvdFilePathClick" entry="EVT_BUTTON" />
+		</object>
+	</resource_extra>
+</wxsmith>
