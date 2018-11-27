@@ -22,7 +22,7 @@
 #include <wx/wxprec.h>
 
 #ifndef WX_PRECOMP
-    #include <wx/wx.h>
+#include <wx/wx.h>
 #endif
 
 #include <list>
@@ -33,15 +33,15 @@
 #include <wx/animate.h>
 
 #if wxCHECK_VERSION(3,0,0)
-    #include <wx/propgrid/property.h>
+#include <wx/propgrid/property.h>
 #else
-    #include <wx/propgrid/props.h>
+#include <wx/propgrid/props.h>
 #endif // wxCHECK_VERSION
 
 #include <sdk.h>
 
-#include "cbsvdfilereader.h"
-#include "cbsvpgproperties.h"
+#include "cbSVDFileReader.h"
+#include "cbSVPGProperties.h"
 
 struct RegisterWatch
 {
@@ -111,17 +111,17 @@ class cbSVWindow : public wxPanel
 
         void UpdateWorkingStat(working_stat stat, bool start = true)
         {
-            if(stat == WORKING_STAT_MAX)
-            return;
+            if (stat == WORKING_STAT_MAX)
+                return;
 
-            if(start)
+            if (start)
                 m_working_stat.set(stat);
             else
                 m_working_stat.reset(stat);
 
-            if(m_working_stat.any())
+            if (m_working_stat.any())
             {
-                if(!m_anictrl->IsPlaying())
+                if (!m_anictrl->IsPlaying())
                     m_anictrl->Play();
             }
             else

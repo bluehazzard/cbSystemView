@@ -14,6 +14,7 @@
 				<Compiler>
 					<Add option="-g" />
 					<Add option="`wx-config --cflags  --version=3.0`" />
+					<Add option="-DTIXML_USE_STL" />
 					<Add directory="$(#cb)/include" />
 					<Add directory="$(#cb)/sdk/wxscintilla/include" />
 					<Add directory="$(#cb)/include/tinyxml" />
@@ -74,15 +75,15 @@
 		</Linker>
 		<Unit filename="cbSystemView.cpp" />
 		<Unit filename="cbSystemView.h" />
-		<Unit filename="include/ProjectConfigPanel.h" />
-		<Unit filename="include/cbsvdfilereader.h" />
-		<Unit filename="include/cbsvpgproperties.h" />
-		<Unit filename="include/cbsvwindow.h" />
+		<Unit filename="include/cbSVDFileReader.h" />
+		<Unit filename="include/cbSVPGProperties.h" />
+		<Unit filename="include/cbSVProjectConfigPanel.h" />
+		<Unit filename="include/cbSVWindow.h" />
 		<Unit filename="manifest.xml" />
-		<Unit filename="src/ProjectConfigPanel.cpp" />
-		<Unit filename="src/cbsvdfilereader.cpp" />
-		<Unit filename="src/cbsvpgproperties.cpp" />
-		<Unit filename="src/cbsvwindow.cpp" />
+		<Unit filename="src/cbSVDFileReader.cpp" />
+		<Unit filename="src/cbSVPGProperties.cpp" />
+		<Unit filename="src/cbSVProjectConfigPanel.cpp" />
+		<Unit filename="src/cbSVWindow.cpp" />
 		<Extensions>
 			<code_completion />
 			<envvars />
@@ -92,6 +93,11 @@
 					<wxPanel wxs="wxsmith/ProjectConfigPanel.wxs" src="src/ProjectConfigPanel.cpp" hdr="include/ProjectConfigPanel.h" xrc="res/ProjectConfig.xrc" fwddecl="0" i18n="1" name="ProjectConfigPanel" language="CPP" />
 				</resources>
 			</wxsmith>
+			<cbSystemView>
+				<target name="#project#">
+					<svdFile path="" />
+				</target>
+			</cbSystemView>
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>

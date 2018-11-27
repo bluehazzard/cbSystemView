@@ -16,7 +16,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0>.
 */
 
-#include "cbsvdfilereader.h"
+#include "cbSVDFileReader.h"
 
 #include <string.h>
 #include <wx/tokenzr.h>
@@ -26,133 +26,253 @@
 
 wxString SVDToWxString(svdAccessRight r)
 {
-    switch(r)
+    switch (r)
     {
-        case SVD_ACCESS_ND:             return wxString(wxT("ACCESS_NOT_DEFINED"));
-        case SVD_ACCESS_READ:           return wxString(wxT("ACCESS_READ"));
-        case SVD_ACCESS_WRITE:          return wxString(wxT("ACCESS_WRITE"));
-        case SVD_ACCESS_READ_WRITE:     return wxString(wxT("ACCESS_READ_WRITE"));
-        case SVD_ACCESS_WRITE_ONCE:     return wxString(wxT("ACCESS_WRITE_ONCE"));
-        case SVD_ACCESS_READ_WRITE_ONCE: return wxString(wxT("ACCESS_READ_WRITE_ONCE"));
+    case SVD_ACCESS_ND:
+        return wxString(wxT("ACCESS_NOT_DEFINED"));
+
+    case SVD_ACCESS_READ:
+        return wxString(wxT("ACCESS_READ"));
+
+    case SVD_ACCESS_WRITE:
+        return wxString(wxT("ACCESS_WRITE"));
+
+    case SVD_ACCESS_READ_WRITE:
+        return wxString(wxT("ACCESS_READ_WRITE"));
+
+    case SVD_ACCESS_WRITE_ONCE:
+        return wxString(wxT("ACCESS_WRITE_ONCE"));
+
+    case SVD_ACCESS_READ_WRITE_ONCE:
+        return wxString(wxT("ACCESS_READ_WRITE_ONCE"));
     }
+
     return wxEmptyString;
 };
 
 wxString SVDToWxString(svdEndianType r)
 {
-    switch(r)
+    switch (r)
     {
-        case SVD_ENDIAN_ND:         return wxString(wxT("ENDIAN_NOT_DEFINED"));
-        case SVD_ENDIAN_LITTLE:     return wxString(wxT("ENDIAN_LITTLE"));
-        case SVD_ENDIAN_BIG:        return wxString(wxT("ENDIAN_BIG"));
-        case SVD_ENDIAN_SELECTABLE: return wxString(wxT("ENDIAN_SELECTABLE"));
-        case SVD_ENDIAN_OTHER:      return wxString(wxT("ENDIAN_OTHER"));
+    case SVD_ENDIAN_ND:
+        return wxString(wxT("ENDIAN_NOT_DEFINED"));
+
+    case SVD_ENDIAN_LITTLE:
+        return wxString(wxT("ENDIAN_LITTLE"));
+
+    case SVD_ENDIAN_BIG:
+        return wxString(wxT("ENDIAN_BIG"));
+
+    case SVD_ENDIAN_SELECTABLE:
+        return wxString(wxT("ENDIAN_SELECTABLE"));
+
+    case SVD_ENDIAN_OTHER:
+        return wxString(wxT("ENDIAN_OTHER"));
     }
+
     return wxEmptyString;
 };
 
 wxString SVDToWxString(svdProtectionLevel r)
 {
-    switch(r)
+    switch (r)
     {
-        case SVD_PROTECTION_ND:         return wxString(wxT("PROTECTION_NOT_DEFINED"));
-        case SVD_PROTECTION_SECURE:     return wxString(wxT("PROTECTION_SECURE"));
-        case SVD_PROTECTION_NON_SECURE: return wxString(wxT("PROTECTION_NON_SECURE"));
-        case SVD_PROTECTION_PRIVILEGED: return wxString(wxT("PROTECTION_PRIVILEGED"));
+    case SVD_PROTECTION_ND:
+        return wxString(wxT("PROTECTION_NOT_DEFINED"));
+
+    case SVD_PROTECTION_SECURE:
+        return wxString(wxT("PROTECTION_SECURE"));
+
+    case SVD_PROTECTION_NON_SECURE:
+        return wxString(wxT("PROTECTION_NON_SECURE"));
+
+    case SVD_PROTECTION_PRIVILEGED:
+        return wxString(wxT("PROTECTION_PRIVILEGED"));
     }
+
     return wxEmptyString;
 };
 
 wxString SVDToWxString(svdRegionAccessLevel r)
 {
-    switch(r)
+    switch (r)
     {
-        case SVD_LEVEL_ND:          return wxString(wxT("LEVEL_NOT_DEFINED"));
-        case SVD_LEVEL_NON_SECURE:  return wxString(wxT("LEVEL_NON_SECURE"));
-        case SVD_LEVE_CALLABLE:     return wxString(wxT("LEVE_CALLABLE"));
+    case SVD_LEVEL_ND:
+        return wxString(wxT("LEVEL_NOT_DEFINED"));
+
+    case SVD_LEVEL_NON_SECURE:
+        return wxString(wxT("LEVEL_NON_SECURE"));
+
+    case SVD_LEVE_CALLABLE:
+        return wxString(wxT("LEVE_CALLABLE"));
     }
+
     return wxEmptyString;
 };
 
 wxString SVDToWxString(svdAddressBlockUsage r)
 {
-    switch(r)
+    switch (r)
     {
-        case SVD_USAGE_ND:         return wxString(wxT("USAGE_NOT_DEFINED"));
-        case SVD_USAGE_REGISTERS:  return wxString(wxT("USAGE_REGISTERS"));
-        case SVD_USAGE_BUFFER:     return wxString(wxT("USAGE_BUFFER"));
-        case SVD_USAGE_RESERVED:   return wxString(wxT("USAGE_RESERVED"));
+    case SVD_USAGE_ND:
+        return wxString(wxT("USAGE_NOT_DEFINED"));
+
+    case SVD_USAGE_REGISTERS:
+        return wxString(wxT("USAGE_REGISTERS"));
+
+    case SVD_USAGE_BUFFER:
+        return wxString(wxT("USAGE_BUFFER"));
+
+    case SVD_USAGE_RESERVED:
+        return wxString(wxT("USAGE_RESERVED"));
     }
+
     return wxEmptyString;
 };
 
 wxString SVDToWxString(svdDataType r)
 {
-    switch(r)
+    switch (r)
     {
-        case SVD_TYPE_ND:           return wxString(wxT("Not defined"));
-        case SVD_TYPE_UINT8_T:      return wxString(wxT("uint8_t"));
-        case SVD_TYPE_UINT16_T:     return wxString(wxT("uitn16_t"));
-        case SVD_TYPE_UINT32_T:     return wxString(wxT("uint32_t"));
-        case SVD_TYPE_UINT64_T:     return wxString(wxT("uint64_t"));
-        case SVD_TYPE_INT8_T:       return wxString(wxT("int8_t"));
-        case SVD_TYPE_INT16_T:      return wxString(wxT("itn16_t"));
-        case SVD_TYPE_INT32_T:      return wxString(wxT("int32_t"));
-        case SVD_TYPE_INT64_T:      return wxString(wxT("int64_t"));
-        case SVD_TYPE_UINT8_T_P:    return wxString(wxT("*uint8_t"));
-        case SVD_TYPE_UINT16_T_P:   return wxString(wxT("*uitn16_t"));
-        case SVD_TYPE_UINT32_T_P:   return wxString(wxT("*uint32_t"));
-        case SVD_TYPE_UINT64_T_P:   return wxString(wxT("*uint64_t"));
-        case SVD_TYPE_INT8_T_P:     return wxString(wxT("*int8_t"));
-        case SVD_TYPE_INT16_T_P:    return wxString(wxT("*itn16_t"));
-        case SVD_TYPE_INT32_T_P:    return wxString(wxT("*int32_t"));
-        case SVD_TYPE_INT64_T_P:    return wxString(wxT("*int64_t"));
+    case SVD_TYPE_ND:
+        return wxString(wxT("Not defined"));
+
+    case SVD_TYPE_UINT8_T:
+        return wxString(wxT("uint8_t"));
+
+    case SVD_TYPE_UINT16_T:
+        return wxString(wxT("uitn16_t"));
+
+    case SVD_TYPE_UINT32_T:
+        return wxString(wxT("uint32_t"));
+
+    case SVD_TYPE_UINT64_T:
+        return wxString(wxT("uint64_t"));
+
+    case SVD_TYPE_INT8_T:
+        return wxString(wxT("int8_t"));
+
+    case SVD_TYPE_INT16_T:
+        return wxString(wxT("itn16_t"));
+
+    case SVD_TYPE_INT32_T:
+        return wxString(wxT("int32_t"));
+
+    case SVD_TYPE_INT64_T:
+        return wxString(wxT("int64_t"));
+
+    case SVD_TYPE_UINT8_T_P:
+        return wxString(wxT("*uint8_t"));
+
+    case SVD_TYPE_UINT16_T_P:
+        return wxString(wxT("*uitn16_t"));
+
+    case SVD_TYPE_UINT32_T_P:
+        return wxString(wxT("*uint32_t"));
+
+    case SVD_TYPE_UINT64_T_P:
+        return wxString(wxT("*uint64_t"));
+
+    case SVD_TYPE_INT8_T_P:
+        return wxString(wxT("*int8_t"));
+
+    case SVD_TYPE_INT16_T_P:
+        return wxString(wxT("*itn16_t"));
+
+    case SVD_TYPE_INT32_T_P:
+        return wxString(wxT("*int32_t"));
+
+    case SVD_TYPE_INT64_T_P:
+        return wxString(wxT("*int64_t"));
     }
+
     return wxEmptyString;
 };
 
 wxString SVDToWxString(svdWriteModifications r)
 {
-    switch(r)
+    switch (r)
     {
-        case SVD_WRITE_MODIFICATION_ND:                 return wxString(wxT("MODIFICATION_NOT_DEFINED"));
-        case SVD_WRITE_MODIFICATION_NONE:               return wxString(wxT("MODIFICATION_NONE"));
-        case SVD_WRITE_MODIFICATION_MODIFY:             return wxString(wxT("MODIFICATION_MODIFY"));
-        case SVD_WRITE_MODIFICATION_ONTE_TO_CLEAR:      return wxString(wxT("MODIFICATION_ONTE_TO_CLEAR"));
-        case SVD_WRITE_MODIFICATION_ONTE_TO_SET:        return wxString(wxT("MODIFICATION_ONTE_TO_SET"));
-        case SVD_WRITE_MODIFICATION_ONTE_TO_TOGGLE:     return wxString(wxT("MODIFICATION_ONTE_TO_TOGGLE"));
-        case SVD_WRITE_MODIFICATION_ZERO_TO_CLEAR:      return wxString(wxT("MODIFICATION_ZERO_TO_CLEAR"));
-        case SVD_WRITE_MODIFICATION_ZERO_TO_SET:        return wxString(wxT("MODIFICATION_ZERO_TO_SET"));
-        case SVD_WRITE_MODIFICATION_ZERO_TO_TOGGLE:     return wxString(wxT("MODIFICATION_ZERO_TO_TOGGLE"));
-        case SVD_WRITE_MODIFICATION_CLEAR:              return wxString(wxT("MODIFICATION_CLEAR"));
-        case SVD_WRITE_MODIFICATION_SET:                return wxString(wxT("MODIFICATION_SET"));
+    case SVD_WRITE_MODIFICATION_ND:
+        return wxString(wxT("MODIFICATION_NOT_DEFINED"));
+
+    case SVD_WRITE_MODIFICATION_NONE:
+        return wxString(wxT("MODIFICATION_NONE"));
+
+    case SVD_WRITE_MODIFICATION_MODIFY:
+        return wxString(wxT("MODIFICATION_MODIFY"));
+
+    case SVD_WRITE_MODIFICATION_ONTE_TO_CLEAR:
+        return wxString(wxT("MODIFICATION_ONTE_TO_CLEAR"));
+
+    case SVD_WRITE_MODIFICATION_ONTE_TO_SET:
+        return wxString(wxT("MODIFICATION_ONTE_TO_SET"));
+
+    case SVD_WRITE_MODIFICATION_ONTE_TO_TOGGLE:
+        return wxString(wxT("MODIFICATION_ONTE_TO_TOGGLE"));
+
+    case SVD_WRITE_MODIFICATION_ZERO_TO_CLEAR:
+        return wxString(wxT("MODIFICATION_ZERO_TO_CLEAR"));
+
+    case SVD_WRITE_MODIFICATION_ZERO_TO_SET:
+        return wxString(wxT("MODIFICATION_ZERO_TO_SET"));
+
+    case SVD_WRITE_MODIFICATION_ZERO_TO_TOGGLE:
+        return wxString(wxT("MODIFICATION_ZERO_TO_TOGGLE"));
+
+    case SVD_WRITE_MODIFICATION_CLEAR:
+        return wxString(wxT("MODIFICATION_CLEAR"));
+
+    case SVD_WRITE_MODIFICATION_SET:
+        return wxString(wxT("MODIFICATION_SET"));
     }
+
     return wxEmptyString;
 };
 
 wxString SVDToWxString(svdReadModifications r)
 {
-    switch(r)
+    switch (r)
     {
-        case SVD_READ_MODIFICATION_ND:              return wxString(wxT("MODIFICATION_NOT_DEFINED"));
-        case SVD_READ_MODIFICATION_NONE:            return wxString(wxT("MODIFICATION_NONE"));
-        case SVD_READ_MODIFICATION_MODIFY:          return wxString(wxT("MODIFICATION_MODIFY"));
-        case SVD_READ_MODIFICATION_MODIFY_EXTERNAL: return wxString(wxT("MODIFICATION_MODIFY_EXTERNAL"));
-        case SVD_READ_MODIFICATION_SET:             return wxString(wxT("MODIFICATION_SET"));
-        case SVD_READ_MODIFICATION_CLEAR:           return wxString(wxT("MODIFICATION_CLEAR"));
+    case SVD_READ_MODIFICATION_ND:
+        return wxString(wxT("MODIFICATION_NOT_DEFINED"));
+
+    case SVD_READ_MODIFICATION_NONE:
+        return wxString(wxT("MODIFICATION_NONE"));
+
+    case SVD_READ_MODIFICATION_MODIFY:
+        return wxString(wxT("MODIFICATION_MODIFY"));
+
+    case SVD_READ_MODIFICATION_MODIFY_EXTERNAL:
+        return wxString(wxT("MODIFICATION_MODIFY_EXTERNAL"));
+
+    case SVD_READ_MODIFICATION_SET:
+        return wxString(wxT("MODIFICATION_SET"));
+
+    case SVD_READ_MODIFICATION_CLEAR:
+        return wxString(wxT("MODIFICATION_CLEAR"));
     }
+
     return wxEmptyString;
 };
 
 wxString SVDToWxString(svdEnumUsage& r)
 {
-    switch(r)
+    switch (r)
     {
-        case SVD_ENUM_ND:           return wxString(wxT("NOT_DEFINED"));
-        case SVD_ENUM_READ_WRITE:   return wxString(wxT("READ_WRITE"));
-        case SVD_ENUM_WRITE:        return wxString(wxT("WRITE"));
-        case SVD_ENUM_READ:         return wxString(wxT("READ"));
+    case SVD_ENUM_ND:
+        return wxString(wxT("NOT_DEFINED"));
+
+    case SVD_ENUM_READ_WRITE:
+        return wxString(wxT("READ_WRITE"));
+
+    case SVD_ENUM_WRITE:
+        return wxString(wxT("WRITE"));
+
+    case SVD_ENUM_READ:
+        return wxString(wxT("READ"));
     }
+
     return wxEmptyString;
 };
 
@@ -185,9 +305,10 @@ int SVDSAURegion::ReadFromNode(TiXmlElement* node)
 
     wxString tmp = wxT("n");
     ReadFromXMLElement(node, "protectionWhenDisabled", tmp);
-    if(tmp == wxT("n"))
+
+    if (tmp == wxT("n"))
         m_access = SVD_LEVEL_NON_SECURE;
-    else if(tmp == wxT("c"))
+    else if (tmp == wxT("c"))
         m_access = SVD_LEVE_CALLABLE;
 
     return 0;
@@ -201,38 +322,43 @@ int SVDArray::ReadFromNode(TiXmlElement* node)
     m_dimName       = wxEmptyString;
     wxString dimIndexes = wxEmptyString;
 
-    ReadFromXMLElement( node, "dim", m_dim);
-    ReadFromXMLElement( node, "dimIncrement", m_dimIncrement);
-    ReadFromXMLElement( node, "dimName", m_dimName);
+    ReadFromXMLElement(node, "dim", m_dim);
+    ReadFromXMLElement(node, "dimIncrement", m_dimIncrement);
+    ReadFromXMLElement(node, "dimName", m_dimName);
 
-    ReadFromXMLElement( node, "dimIndex" , dimIndexes );
-    if(m_dim != 0)
+    ReadFromXMLElement(node, "dimIndex", dimIndexes);
+
+    if (m_dim != 0)
     {
         m_dimIndex.clear();
 
-        if(dimIndexes.Contains( wxT(",")) )
+        if (dimIndexes.Contains(wxT(",")))
         {
             wxStringTokenizer tok(dimIndexes, wxT(","));
-            while ( tok.HasMoreTokens() )
-                m_dimIndex.push_back( tok.GetNextToken() );
+
+            while (tok.HasMoreTokens())
+                m_dimIndex.push_back(tok.GetNextToken());
         }
         else
         {
             wxString from = dimIndexes.BeforeFirst('-');
             wxString to   = dimIndexes.AfterLast('-');
             long l_from = 0, l_to = 0;
-            if( !from.ToLong( &l_from ) || !to.ToLong( &l_to ))
+
+            if (!from.ToLong(&l_from) || !to.ToLong(&l_to))
             {
                 // error
             }
+
             // create list with index names
-            for( long i = l_from;i <= l_to;i++ )
+            for (long i = l_from; i <= l_to; i++)
             {
-                m_dimIndex.push_back( wxString::Format( wxT("%ld"), i ));
+                m_dimIndex.push_back(wxString::Format(wxT("%ld"), i));
             }
         }
 
     }
+
     return 0;
 }
 
@@ -243,23 +369,26 @@ int SVDSAURegionsConfig::ReadFromNode(TiXmlElement* node)
 
     wxString tmp = wxT("n");
     ReadFromXMLElement(node, "protectionWhenDisabled", tmp);
-    if(tmp == wxT("n"))
+
+    if (tmp == wxT("n"))
         m_ProtectionWhenDisabled = SVD_PROTECTION_NON_SECURE;
-    else if(tmp == wxT("s"))
+    else if (tmp == wxT("s"))
         m_ProtectionWhenDisabled = SVD_PROTECTION_SECURE;
-    else if(tmp == wxT("p"))
+    else if (tmp == wxT("p"))
         m_ProtectionWhenDisabled = SVD_PROTECTION_PRIVILEGED;
 
     TiXmlElement* element = node->FirstChildElement("region");
     m_regions.clear();
-    while(element != nullptr)
+
+    while (element != nullptr)
     {
-        SVDSAURegion tmp_region(m_ProtectionWhenDisabled == SVD_PROTECTION_NON_SECURE ? SVD_LEVEL_NON_SECURE : SVD_LEVE_CALLABLE ,m_enabled);
+        SVDSAURegion tmp_region(m_ProtectionWhenDisabled == SVD_PROTECTION_NON_SECURE ? SVD_LEVEL_NON_SECURE : SVD_LEVE_CALLABLE, m_enabled);
         tmp_region.ReadFromNode(element);
         m_regions.push_back(tmp_region);
 
         element = element->NextSiblingElement("region");
     }
+
     return 0;
 }
 
@@ -267,15 +396,15 @@ int SVDRegisterProperties::ReadFromNode(TiXmlElement* node)
 {
 
     ReadFromXMLElement(node, "size",        m_size);
-    ReadFromXMLElement(node, "access"    ,  m_access);
+    ReadFromXMLElement(node, "access",  m_access);
     ReadFromXMLElement(node, "protection",  m_protection);
     ReadFromXMLElement(node, "resetValue",  m_resetValue);
-    ReadFromXMLElement(node, "resetMask" ,  m_resetMask);
+    ReadFromXMLElement(node, "resetMask",  m_resetMask);
 
     return 0;
 }
 
-int SVDAddressBlock::ReadFromNode( TiXmlElement *node )
+int SVDAddressBlock::ReadFromNode(TiXmlElement *node)
 {
     ReadFromXMLElement(node, "offset",      m_offset);
     ReadFromXMLElement(node, "size",        m_size);
@@ -295,36 +424,46 @@ int SVDRegisterCluster::ReadFromNode(TiXmlElement* node)
 
     TiXmlElement* element = node->FirstChildElement("cluster");
     m_register.clear();
-    while(element != nullptr)
+
+    while (element != nullptr)
     {
         std::shared_ptr<SVDRegisterCluster> cluster = std::shared_ptr<SVDRegisterCluster>(new SVDRegisterCluster(*this));
         wxString derivedFrom;
+
         if (ReadFromXMLAttribute(element, "derivedFrom", derivedFrom))
         {
             ResolveDerivedFrom(m_register, *cluster.get(), derivedFrom);
         }
+
         cluster->ReadFromNode(element);
-        if (ResolveArray(m_register,cluster) < 0)
+
+        if (ResolveArray(m_register, cluster) < 0)
         {
             // error resolving array
         }
+
         element = element->NextSiblingElement("cluster");
     }
 
     element = node->FirstChildElement("register");
-    while(element != nullptr)
+
+    while (element != nullptr)
     {
-        std::shared_ptr<SVDRegister> regist = std::shared_ptr<SVDRegister>( new SVDRegister(*this) );
+        std::shared_ptr<SVDRegister> regist = std::shared_ptr<SVDRegister>(new SVDRegister(*this));
         wxString derivedFrom;
-        if(ReadFromXMLAttribute(element, "derivedFrom", derivedFrom))
+
+        if (ReadFromXMLAttribute(element, "derivedFrom", derivedFrom))
         {
             ResolveDerivedFrom(m_register, *regist.get(), derivedFrom);
         }
+
         regist->ReadFromNode(element);
-        if(ResolveArray(m_register, regist) < 0)
+
+        if (ResolveArray(m_register, regist) < 0)
         {
             // error resolving array
         }
+
         element = element->NextSiblingElement("register");
     }
 
@@ -344,28 +483,35 @@ int SVDRegister::ReadFromNode(TiXmlElement* node)
 
     TiXmlElement* element = node->FirstChildElement("fields");
     m_fields.clear();
-    if(element)
+
+    if (element)
     {
         element = element->FirstChildElement("field");
-        while(element != nullptr)
+
+        while (element != nullptr)
         {
             std::shared_ptr<SVDField> field = std::shared_ptr<SVDField>(new SVDField(*this));
             wxString derivedFrom;
-            if(ReadFromXMLAttribute(element, "derivedFrom", derivedFrom))
+
+            if (ReadFromXMLAttribute(element, "derivedFrom", derivedFrom))
             {
                 // TODO (bluehazzard#1#): This does not work, because the path has to be relative, and we do not support this... for ex. in peripheral A and registerX, derive from peripheralA.registerYY.fieldYY.
                 ResolveDerivedFrom(m_fields, *field.get(), derivedFrom);
             }
+
             field->ReadFromNode(element);
-            if(ResolveArray(m_fields,field) < 0)
+
+            if (ResolveArray(m_fields, field) < 0)
             {
-                 // error resolving array
-                 return -1;
+                // error resolving array
+                return -1;
             }
+
             // TODO (bluehazzard#1#): The item displayName has also to be specialized with the array name
             element = element->NextSiblingElement("field");
         }
     }
+
     return 0;
 }
 
@@ -382,24 +528,29 @@ int SVDWriteConstrains::ReadFromNode(TiXmlElement* node)
     ReadFromXMLElement(node, "writeAsRead", m_useEnumeratedValues);
 
     TiXmlElement* element = node->FirstChildElement("range");
+
     if (element != nullptr)
     {
         m_range.ReadFromNode(element);
     }
+
     return 0;
 }
 
 int SVDBitRange::ReadFromNode(TiXmlElement* node)
 {
     TiXmlElement* element = node->FirstChildElement("bitOffset");
-    if(element)
+
+    if (element)
     {
         ReadFromXMLElement(node, "bitOffset", m_BitOffset);
         ReadFromXMLElement(node, "bitWidth", m_BitWidth);
         return 0;
     }
+
     element = node->FirstChildElement("lsb");
-    if(element)
+
+    if (element)
     {
         unsigned int lsb = 0, msb = 0;
         ReadFromXMLElement(node, "lsb", lsb);
@@ -407,13 +558,15 @@ int SVDBitRange::ReadFromNode(TiXmlElement* node)
         SetLSBMSB(lsb, msb);
         return 0;
     }
+
     element = node->FirstChildElement("bitRange");
-    if(element)
+
+    if (element)
     {
         wxString bitRange = wxEmptyString;
         ReadFromXMLElement(node, "bitRange", bitRange);
 
-        if(bitRange != wxEmptyString)
+        if (bitRange != wxEmptyString)
         {
             wxString s_msb, s_lsb;
             s_msb = bitRange.BeforeFirst(':');
@@ -423,7 +576,8 @@ int SVDBitRange::ReadFromNode(TiXmlElement* node)
             long lsb = 0, msb = 0, result = 1;
             result &= s_msb.ToLong(&msb);
             result &= s_lsb.ToLong(&lsb);
-            if(!result)
+
+            if (!result)
             {
                 // ERROR:
                 return -1;
@@ -435,6 +589,7 @@ int SVDBitRange::ReadFromNode(TiXmlElement* node)
 
         return -1;
     }
+
     return -1;
 }
 
@@ -463,10 +618,12 @@ int SVDField::ReadFromNode(TiXmlElement* node)
 
     m_bitRange.ReadFromNode(node);
     TiXmlElement* element = node->FirstChildElement("enumeratedValues");
+
     if (element)
     {
         m_enumerated_value.ReadFromNode(element);
     }
+
     return 0;
 }
 
@@ -489,18 +646,22 @@ int SVDEnumeratedValues::ReadFromNode(TiXmlElement* node)
     m_values.clear();
 
     TiXmlElement* element = node->FirstChildElement("enumeratedValue");
-    while(element != nullptr)
+
+    while (element != nullptr)
     {
         std::shared_ptr<SVDEnumeratedValue> value = std::shared_ptr<SVDEnumeratedValue>(new SVDEnumeratedValue());
         wxString derivedFrom;
-        if(ReadFromXMLAttribute(element, "derivedFrom", derivedFrom))
+
+        if (ReadFromXMLAttribute(element, "derivedFrom", derivedFrom))
         {
             ResolveDerivedFrom(m_values, *value.get(), derivedFrom);
         }
+
         value->ReadFromNode(element);
         m_values.push_back(value);
         element = element->NextSiblingElement("enumeratedValue");
     }
+
     return 0;
 }
 
@@ -513,17 +674,19 @@ int SVDEnumeratedValue::ReadFromNode(TiXmlElement* node)
     m_isDefault = false;
     bool is_val = ReadFromXMLElement(node, "value",     m_value);
     bool is_def = ReadFromXMLElement(node, "isDefault", m_isDefault);;
-    if( is_val == false && is_def == false)
+
+    if (is_val == false && is_def == false)
         m_dont_care = true;
     else
         m_dont_care = false;
+
     return 0;
 }
 
 int SVDPeriphery::ReadFromNode(TiXmlElement* node)
 {
-    SVDArray::ReadFromNode( node );
-    SVDRegisterProperties::ReadFromNode( node );
+    SVDArray::ReadFromNode(node);
+    SVDRegisterProperties::ReadFromNode(node);
 
     m_derivedFrom = wxEmptyString;
     ReadFromXMLAttribute(node, "derivedFrom", m_derivedFrom);
@@ -541,7 +704,8 @@ int SVDPeriphery::ReadFromNode(TiXmlElement* node)
 
     TiXmlElement* element = node->FirstChildElement("addressBlock");
     m_addressBlocks.clear();
-    while(element != nullptr)
+
+    while (element != nullptr)
     {
         SVDAddressBlock tmp_addressBlock;
         tmp_addressBlock.ReadFromNode(element);
@@ -551,7 +715,8 @@ int SVDPeriphery::ReadFromNode(TiXmlElement* node)
 
     element = node->FirstChildElement("interrupt");
     m_interrupts.clear();
-    while(element != nullptr)
+
+    while (element != nullptr)
     {
         SVDInterrupt tmp_interrupt;
         tmp_interrupt.ReadFromNode(element);
@@ -561,52 +726,64 @@ int SVDPeriphery::ReadFromNode(TiXmlElement* node)
     }
 
     TiXmlElement* register_element = node->FirstChildElement("registers");
-    if(register_element)
+
+    if (register_element)
     {
         element = register_element->FirstChildElement("cluster");
         m_registers.clear();
-        while(element != nullptr)
+
+        while (element != nullptr)
         {
             std::shared_ptr<SVDRegisterCluster> cluster = std::shared_ptr<SVDRegisterCluster>(new SVDRegisterCluster(*this));
             wxString derivedFrom;
-            if(ReadFromXMLAttribute(element, "derivedFrom", derivedFrom))
+
+            if (ReadFromXMLAttribute(element, "derivedFrom", derivedFrom))
             {
                 ResolveDerivedFrom(m_registers, *cluster.get(), derivedFrom);
             }
+
             cluster->ReadFromNode(element);
-            if(ResolveArray(m_registers,cluster) < 0)
+
+            if (ResolveArray(m_registers, cluster) < 0)
             {
                 // error resolving array
             }
+
             element = element->NextSiblingElement("cluster");
         }
 
         element = register_element->FirstChildElement("register");
-        while(element != nullptr)
+
+        while (element != nullptr)
         {
             std::shared_ptr<SVDRegister> regist = std::shared_ptr<SVDRegister>(new SVDRegister(*this));
             wxString derivedFrom;
-            if(ReadFromXMLAttribute(element, "derivedFrom", derivedFrom))
+
+            if (ReadFromXMLAttribute(element, "derivedFrom", derivedFrom))
             {
                 ResolveDerivedFrom(m_registers, *regist.get(), derivedFrom);
             }
+
             regist->ReadFromNode(element);
-            if(ResolveArray(m_registers, regist) < 0)
+
+            if (ResolveArray(m_registers, regist) < 0)
             {
                 // error resolving array
                 return -1;
             }
+
             element = element->NextSiblingElement("register");
         }
     }
+
     return 0;
 }
 
 
-int SVDRegisterBase::ReadFromNode( TiXmlElement *node )
+int SVDRegisterBase::ReadFromNode(TiXmlElement *node)
 {
-    SVDArray::ReadFromNode( node );
-    SVDRegisterProperties::ReadFromNode( node );
+    SVDArray::ReadFromNode(node);
+    SVDRegisterProperties::ReadFromNode(node);
 
     ReadFromXMLElement(node, "name",            m_name);
     ReadFromXMLElement(node, "description",     m_description);
@@ -631,31 +808,39 @@ int SVDDevice::ReadFromNode(TiXmlElement* node)
     ReadFromXMLElement(node, "width",       m_width);
 
     TiXmlElement* element = node->FirstChildElement("cpu");
-    if(element)
+
+    if (element)
         m_cpu.ReadFromNode(element);
 
     element = node->FirstChildElement("peripherals");
     m_peripherals.clear();
-    if(element)
+
+    if (element)
     {
         TiXmlElement* peripheral = element->FirstChildElement("peripheral");
-        while(peripheral != nullptr)
+
+        while (peripheral != nullptr)
         {
             std::shared_ptr<SVDPeriphery>  pheri = std::shared_ptr<SVDPeriphery>(new SVDPeriphery(*this));
             wxString derivedFrom;
-            if(ReadFromXMLAttribute(peripheral, "derivedFrom", derivedFrom))
+
+            if (ReadFromXMLAttribute(peripheral, "derivedFrom", derivedFrom))
             {
                 ResolveDerivedFrom(m_peripherals, *pheri.get(), derivedFrom);
             }
+
             pheri->ReadFromNode(peripheral);
-            if(ResolveArray(m_peripherals, pheri) < 0)
+
+            if (ResolveArray(m_peripherals, pheri) < 0)
             {
                 // error resolving array
             }
+
             peripheral = peripheral->NextSiblingElement("peripheral");
 
         }
     }
+
     return 0;
 }
 
@@ -668,29 +853,31 @@ SVDPeriphery::SVDPeriphery(const SVDPeriphery& base_prop)           : SVDRegiste
 
 int SVDCpu::ReadFromNode(TiXmlElement* node)
 {
-    ReadFromXMLElement(node,"name", m_name);
+    ReadFromXMLElement(node, "name", m_name);
 
     TiXmlElement* element = node->FirstChildElement("revision");
-    if(element)
+
+    if (element)
         m_revision = SVDHWRevision(element->GetText());
 
-    ReadFromXMLElement(node,"endian",        m_endian);
-    ReadFromXMLElement(node,"mpuPresent",    m_mpuPresent);
-    ReadFromXMLElement(node,"fpuPresent",    m_fpuPresent);
-    ReadFromXMLElement(node,"fpuDP",         m_fpuDP);
-    ReadFromXMLElement(node,"icachePresent", m_iCachePresent);
-    ReadFromXMLElement(node,"dcachePresent", m_dCachePresent);
-    ReadFromXMLElement(node,"itcmPresent",   m_itcmPresent);
-    ReadFromXMLElement(node,"dtcmPresent",   m_dtcmPresent);
-    ReadFromXMLElement(node,"vtorPresent",   m_vtorPresent);
-    ReadFromXMLElement(node,"nvicPrioBits",  m_nvicPriorityBits);
-    ReadFromXMLElement(node,"vendorSystickConfig", m_vendorSystickConfig);
-    ReadFromXMLElement(node,"deviceNumInterrupts", m_deviceNumInterrupts);
-    ReadFromXMLElement(node,"sauNumRegions", m_sauNumRegions);
+    ReadFromXMLElement(node, "endian",        m_endian);
+    ReadFromXMLElement(node, "mpuPresent",    m_mpuPresent);
+    ReadFromXMLElement(node, "fpuPresent",    m_fpuPresent);
+    ReadFromXMLElement(node, "fpuDP",         m_fpuDP);
+    ReadFromXMLElement(node, "icachePresent", m_iCachePresent);
+    ReadFromXMLElement(node, "dcachePresent", m_dCachePresent);
+    ReadFromXMLElement(node, "itcmPresent",   m_itcmPresent);
+    ReadFromXMLElement(node, "dtcmPresent",   m_dtcmPresent);
+    ReadFromXMLElement(node, "vtorPresent",   m_vtorPresent);
+    ReadFromXMLElement(node, "nvicPrioBits",  m_nvicPriorityBits);
+    ReadFromXMLElement(node, "vendorSystickConfig", m_vendorSystickConfig);
+    ReadFromXMLElement(node, "deviceNumInterrupts", m_deviceNumInterrupts);
+    ReadFromXMLElement(node, "sauNumRegions", m_sauNumRegions);
 
     element = node->FirstChildElement("sauRegionsConfig");
     m_sauRegionsConfig.clear();
-    while(element != nullptr)
+
+    while (element != nullptr)
     {
         SVDSAURegionsConfig  tmp_region_config;
         tmp_region_config.ReadFromNode(element);
@@ -698,6 +885,7 @@ int SVDCpu::ReadFromNode(TiXmlElement* node)
 
         element = element->NextSiblingElement("sauRegionsConfig");
     }
+
     return 0;
 }
 
@@ -714,6 +902,7 @@ cbSVDFileReader::~cbSVDFileReader()
 int cbSVDFileReader::LoadSVDFile(const wxString& path, SVDDevice* device)
 {
     TiXmlDocument doc;
+
     if (!TinyXML::LoadDocument(path, &doc))
         return -1;
 
@@ -721,11 +910,12 @@ int cbSVDFileReader::LoadSVDFile(const wxString& path, SVDDevice* device)
     TiXmlNode* device_node;
     TiXmlElement* elem;
     root = doc.RootElement();
-    device_node = root->NextSibling( "device" );
+    device_node = root->NextSibling("device");
 
     if (root)
     {
-        device->ReadFromNode( root );
+        device->ReadFromNode(root);
     }
+
     return 0;
 }
