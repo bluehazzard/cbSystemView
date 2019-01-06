@@ -202,7 +202,7 @@ void cbSystemView::OnRelease(bool appShutDown)
         Manager::Get()->ProcessEvent(evt);
         m_window->Destroy();
     }
-    m_window = 0;
+    m_window = nullptr;
 
     DebuggerManager *debuggerManager = Manager::Get()->GetDebuggerManager();
     cbDebuggerMenuHandler *menuHandler = debuggerManager->GetMenuHandler();
