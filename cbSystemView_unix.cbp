@@ -81,10 +81,12 @@
 		<Unit filename="include/cbsvpgproperties.h" />
 		<Unit filename="include/cbsvwindow.h" />
 		<Unit filename="manifest.xml" />
+		<Unit filename="res/ProjectConfig.xrc" />
 		<Unit filename="src/ProjectConfigPanel.cpp" />
 		<Unit filename="src/cbsvdfilereader.cpp" />
 		<Unit filename="src/cbsvpgproperties.cpp" />
 		<Unit filename="src/cbsvwindow.cpp" />
+		<Unit filename="wxsmith/ProjectConfigPanel.wxs" />
 		<Extensions>
 			<code_completion />
 			<envvars />
