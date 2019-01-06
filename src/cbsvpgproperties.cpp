@@ -318,7 +318,7 @@ svPGRegisterProp::svPGRegisterProp(const SVDRegister &reg, const SVDPeriphery &p
             prop = new svPGValueProp(*field);
         }
 
-        AddChild(prop);
+        AddPrivateChild(prop);
     }
 
     desc << wxString::Format(wxT("\nAddress: 0x%llx\n"), GetAddress());
