@@ -324,7 +324,10 @@ class svPGPeripheryProp : public svPGBaseProp
         virtual wxString GetValueAsString(int argFlags) const;
         #endif
 
-        virtual bool StringToValue( wxVariant& variant, const wxString& text, int argFlags ) {};
+        virtual bool StringToValue( wxVariant& variant, const wxString& text, int argFlags ) const override
+        {
+            return false;
+        }
 
         virtual void RefreshChildren();
 
@@ -372,7 +375,10 @@ class svPGRegisterProp : public svPGBaseProp
         #if !wxCHECK_VERSION(3,0,0)
         virtual wxString GetValueAsString(int argFlags) const;
         #endif
-        virtual bool StringToValue( wxVariant& variant, const wxString& text, int argFlags ) {};
+        virtual bool StringToValue( wxVariant& variant, const wxString& text, int argFlags ) const override
+        {
+            return false;
+        }
 
         virtual void RefreshChildren();
 
@@ -416,7 +422,7 @@ class svPGEnumFieldProp : public svPGBaseProp
         #if !wxCHECK_VERSION(3,0,0)
         virtual wxString GetValueAsString(int argFlags) const;
         #endif
-        virtual bool StringToValue( wxVariant& variant, const wxString& text, int argFlags ) const;
+        virtual bool StringToValue( wxVariant& variant, const wxString& text, int argFlags ) const override;
         virtual bool IntToValue( wxVariant&  variant, int number,int argFlags = 0) const;
 
         #if !wxCHECK_VERSION(3, 0, 0)
@@ -470,7 +476,7 @@ class svPGBitProp : public svPGBaseProp
         virtual wxString GetValueAsString(int argFlags) const;
         virtual int GetChoiceInfo(wxPGChoiceInfo *choiceinfo);
         #endif
-        bool StringToValue( wxVariant& variant, const wxString& text, int argFlags );
+        bool StringToValue( wxVariant& variant, const wxString& text, int argFlags ) const override;
         virtual bool IntToValue( wxVariant& variant, int number, int argFlags ) const;
         virtual void SetChoiceSelection(int newValue);
 

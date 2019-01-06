@@ -618,8 +618,7 @@ int svPGEnumFieldProp::GetChoiceSelection() const
     {
         return m_value.GetBool() == true ? 1 : 0;
     }
-
-
+    return wxNOT_FOUND;
 }
 
 
@@ -746,6 +745,8 @@ int svPGBitProp::GetChoiceSelection() const
     {
         return m_value.GetBool();
     }
+
+    return wxNOT_FOUND;
 }
 
 wxString svPGBitProp::ValueToString( wxVariant& value, int argFlags ) const
@@ -780,7 +781,7 @@ void svPGBitProp::SetDataFromBinary(const wxString& str)
     SetValue(var, 0, 0);
 }
 
-bool svPGBitProp::StringToValue( wxVariant& variant, const wxString& text, int argFlags )
+bool svPGBitProp::StringToValue( wxVariant& variant, const wxString& text, int argFlags ) const
 {
     svPGData& data = svPGDataRefFromVariant(variant);
 
