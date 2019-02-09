@@ -81,12 +81,17 @@ void cbSystemView::OnAttach()
     evt.minimumSize.Set(200, 150);
     Manager::Get()->ProcessEvent(evt);
 
-    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_STARTED,  new cbEventFunctor<cbSystemView, CodeBlocksEvent>(this, &cbSystemView::OnDebuggerStarted));
-    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_FINISHED, new cbEventFunctor<cbSystemView, CodeBlocksEvent>(this, &cbSystemView::OnDebuggerFinished));
-    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_PAUSED,   new cbEventFunctor<cbSystemView, CodeBlocksEvent>(this, &cbSystemView::OnDebuggerPaused));
-    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_CONTINUED,   new cbEventFunctor<cbSystemView, CodeBlocksEvent>(this, &cbSystemView::OnDebuggerContinued));
+    typedef cbEventFunctor<cbSystemView, CodeBlocksEvent> Functor;
 
-    Manager::Get()->RegisterEventSink(cbEVT_PROJECT_ACTIVATE,   new cbEventFunctor<cbSystemView, CodeBlocksEvent>(this, &cbSystemView::OnProjectActivated));
+    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_STARTED,  new Functor(this, &cbSystemView::OnDebuggerStarted));
+    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_FINISHED, new Functor(this, &cbSystemView::OnDebuggerFinished));
+    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_CONTINUED,   new Functor(this, &cbSystemView::OnDebuggerContinued));
+    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_CURSOR_CHANGED,
+                                      new Functor(this, &cbSystemView::OnDebuggerCursorChanged));
+    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_UPDATED,
+                                      new Functor(this, &cbSystemView::OnDebuggerUpdated));
+
+    Manager::Get()->RegisterEventSink(cbEVT_PROJECT_ACTIVATE,   new Functor(this, &cbSystemView::OnProjectActivated));
 
     ProjectLoaderHooks::HookFunctorBase* myhook = new ProjectLoaderHooks::HookFunctor<cbSystemView>(this, &cbSystemView::OnProjectLoadingHook);
     m_HookId = ProjectLoaderHooks::RegisterHook(myhook);
@@ -180,8 +185,19 @@ void cbSystemView::OnDebuggerContinued(CodeBlocksEvent& evt)
     m_window->OnDebuggerContinued();
 }
 
-void cbSystemView::OnDebuggerPaused(CodeBlocksEvent& evt)
+void cbSystemView::OnDebuggerCursorChanged(CodeBlocksEvent& evt)
 {
+    if (!IsWindowReallyShown(m_window))
+        return;
+    cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
+    if (dbg)
+        dbg->RequestUpdate(cbDebuggerPlugin::DebugWindows::MemoryRange);
+}
+
+void cbSystemView::OnDebuggerUpdated(CodeBlocksEvent& evt)
+{
+    if (cbDebuggerPlugin::DebugWindows(evt.GetInt()) != cbDebuggerPlugin::DebugWindows::MemoryRange)
+        return;
     m_window->UpdateWatches();
 }
 
