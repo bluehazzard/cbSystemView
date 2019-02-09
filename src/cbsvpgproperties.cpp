@@ -302,12 +302,12 @@ svPGRegisterProp::svPGRegisterProp(const SVDRegister &reg, const SVDPeriphery &p
 
         wxPGProperty* prop;
 
-        if((field->m_bitRange.GetWidth() == 1) && (field->m_enumerated_value.GetValuesSize() == 0))
+        /*if((field->m_bitRange.GetWidth() == 1) && (field->m_enumerated_value.GetValuesSize() == 0))
         {
             // Flag
             prop = new svPGBitProp(*field);
         }
-        else if(field->m_enumerated_value.GetValuesSize() != 0)
+        else */if(field->m_enumerated_value.GetValuesSize() != 0)
         {
             // Enumeration
             prop = new svPGEnumFieldProp(*field);
