@@ -194,12 +194,11 @@ cbSVWindow::~cbSVWindow()
 void cbSVWindow::DeleteAllWatches()
 {
     cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
-    auto itr = m_RegisterWatches.begin();
-    for(; itr != m_RegisterWatches.end() ;)
+    for (const RegisterWatch &w : m_RegisterWatches)
     {
-        dbg->DeleteWatch(itr->m_watch);
-        m_RegisterWatches.erase(itr++);
+        dbg->DeleteWatch(w.m_watch);
     }
+    m_RegisterWatches.clear();
 }
 
 void cbSVWindow::DeleteWatch(wxPGProperty* prop)
