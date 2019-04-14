@@ -67,7 +67,8 @@ class cbSVWindow : public wxPanel
 
         std::list<RegisterWatch>::iterator FindWatchFromProperty(wxPGProperty* prop);
         //bool FindWatchFromProperty(wxPGProperty* prop);
-        void GenerateWatchesRecursive(wxPGProperty* prop, cbDebuggerPlugin *dbg);
+        void GenerateWatchesRecursive(wxPGProperty* prop, cbDebuggerPlugin *dbg,
+                                      std::vector<cb::shared_ptr<cbWatch>> &watchesToUpdate);
 
 
     protected:
