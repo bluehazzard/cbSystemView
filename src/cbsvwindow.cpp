@@ -129,6 +129,12 @@ cbSVWindow::cbSVWindow(wxWindow* parent) : wxPanel(parent, wxID_ANY, wxDefaultPo
 
 
     wxToolBar* toolbar = m_pg_man->GetToolBar();
+    if(toolbar == nullptr)
+    {
+         Manager::Get()->GetLogManager()->LogError(_("cbSystemView: ") + _("toolbar == nullptr"));
+         return;
+    }
+
     toolbar->SetToolBitmapSize(wxSize(16,16));
 
     wxBitmap okImg;
@@ -146,6 +152,12 @@ cbSVWindow::cbSVWindow(wxWindow* parent) : wxPanel(parent, wxID_ANY, wxDefaultPo
 
     search_control_pos = m_SearchCtrl->GetPosition().x + m_SearchCtrl->GetSize().GetWidth() + 10;
     m_anictrl = new wxAnimationCtrl(m_pg_man->GetToolBar(), ID_ANI_CTRL, wxNullAnimation, wxPoint(search_control_pos,0), wxSize(ToolSize.GetWidth(), ToolSize.GetHeight()), wxAC_NO_AUTORESIZE );
+
+    if(m_anictrl == nullptr)
+    {
+         Manager::Get()->GetLogManager()->LogError(_("cbSystemView: ") + _("m_anictrl == nullptr"));
+         return;
+    }
 
     okImg = LoadPNGFromResourceFile(wxT("images/ok_16x16.png"));
 
