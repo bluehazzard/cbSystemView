@@ -79,7 +79,7 @@ struct bad_file_execp
 wxBitmap LoadPNGFromResourceFile(wxString name)
 {
 	wxFileSystem filesystem;
-	wxString filename =  wxT("file:") + ConfigManager::GetDataFolder() + wxT("/cbSystemView.zip#zip:/") + name;
+	wxString filename =  wxT("file:/") + ConfigManager::GetDataFolder() + wxT("/cbSystemView.zip#zip:/") + name;
 	wxFSFile *file = filesystem.OpenFile( filename, wxFS_READ | wxFS_SEEKABLE );
 	if(file == nullptr)
         throw bad_file_execp(_("File not found:") + filename);
@@ -95,7 +95,7 @@ wxBitmap LoadPNGFromResourceFile(wxString name)
 wxAnimation LoadGifFromResourceFile(wxString name)
 {
 	wxFileSystem filesystem;
-	wxString filename =  wxT("file:") + ConfigManager::GetDataFolder() + wxT("/cbSystemView.zip#zip:/") + name;
+	wxString filename =  wxT("file:/") + ConfigManager::GetDataFolder() + wxT("/cbSystemView.zip#zip:/") + name;
 	wxFSFile *file = filesystem.OpenFile( filename, wxFS_READ | wxFS_SEEKABLE);
 	if(file == nullptr)
         throw bad_file_execp(_("File not found:") + filename);
