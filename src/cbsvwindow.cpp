@@ -79,7 +79,7 @@ struct bad_file_execp
 wxBitmap LoadPNGFromResourceFile(wxString name)
 {
 	wxFileSystem filesystem;
-	wxString filename =  wxT("file:") + ConfigManager::GetDataFolder() + wxT("/cbSystemView.zip#zip:/") + name;
+	wxString filename =  wxT("file:/") + ConfigManager::GetDataFolder() + wxT("/cbSystemView.zip#zip:/") + name;
 	wxFSFile *file = filesystem.OpenFile( filename, wxFS_READ | wxFS_SEEKABLE );
 	if(file == nullptr)
         throw bad_file_execp(_("File not found:") + filename);
@@ -95,7 +95,7 @@ wxBitmap LoadPNGFromResourceFile(wxString name)
 wxAnimation LoadGifFromResourceFile(wxString name)
 {
 	wxFileSystem filesystem;
-	wxString filename =  wxT("file:") + ConfigManager::GetDataFolder() + wxT("/cbSystemView.zip#zip:/") + name;
+	wxString filename =  wxT("file:/") + ConfigManager::GetDataFolder() + wxT("/cbSystemView.zip#zip:/") + name;
 	wxFSFile *file = filesystem.OpenFile( filename, wxFS_READ | wxFS_SEEKABLE);
 	if(file == nullptr)
         throw bad_file_execp(_("File not found:") + filename);
@@ -129,6 +129,12 @@ cbSVWindow::cbSVWindow(wxWindow* parent) : wxPanel(parent, wxID_ANY, wxDefaultPo
 
 
     wxToolBar* toolbar = m_pg_man->GetToolBar();
+    if(toolbar == nullptr)
+    {
+         Manager::Get()->GetLogManager()->LogError(_("cbSystemView: ") + _("toolbar == nullptr"));
+         return;
+    }
+
     toolbar->SetToolBitmapSize(wxSize(16,16));
 
     wxBitmap okImg;
@@ -146,6 +152,12 @@ cbSVWindow::cbSVWindow(wxWindow* parent) : wxPanel(parent, wxID_ANY, wxDefaultPo
 
     search_control_pos = m_SearchCtrl->GetPosition().x + m_SearchCtrl->GetSize().GetWidth() + 10;
     m_anictrl = new wxAnimationCtrl(m_pg_man->GetToolBar(), ID_ANI_CTRL, wxNullAnimation, wxPoint(search_control_pos,0), wxSize(ToolSize.GetWidth(), ToolSize.GetHeight()), wxAC_NO_AUTORESIZE );
+
+    if(m_anictrl == nullptr)
+    {
+         Manager::Get()->GetLogManager()->LogError(_("cbSystemView: ") + _("m_anictrl == nullptr"));
+         return;
+    }
 
     okImg = LoadPNGFromResourceFile(wxT("images/ok_16x16.png"));
 
@@ -194,12 +206,11 @@ cbSVWindow::~cbSVWindow()
 void cbSVWindow::DeleteAllWatches()
 {
     cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
-    auto itr = m_RegisterWatches.begin();
-    for(; itr != m_RegisterWatches.end() ;)
+    for (const RegisterWatch &w : m_RegisterWatches)
     {
-        dbg->DeleteWatch(itr->m_watch);
-        m_RegisterWatches.erase(itr++);
+        dbg->DeleteWatch(w.m_watch);
     }
+    m_RegisterWatches.clear();
 }
 
 void cbSVWindow::DeleteWatch(wxPGProperty* prop)
@@ -239,11 +250,15 @@ void cbSVWindow::OnModifyTree(wxCommandEvent& event)
         wxPGProperty* root = m_pg_first_page->GetRoot();
         size_t child_count = root->GetChildCount();
         cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
+        std::vector<cb::shared_ptr<cbWatch>> watchesToUpdate;
 
         for (size_t i = 0 ; i < child_count; i++)
         {
-            GenerateWatchesRecursive(root->Item(i), dbg);
+            GenerateWatchesRecursive(root->Item(i), dbg, watchesToUpdate);
         }
+
+        if (!watchesToUpdate.empty())
+            dbg->UpdateWatches(watchesToUpdate);
     }
     else if(event.GetId() == ID_BTN_COLLAPSE_TREE)
     {
@@ -331,7 +346,8 @@ void cbSVWindow::UpdateWatches()
     }
 }
 
-void cbSVWindow::GenerateWatchesRecursive(wxPGProperty* prop, cbDebuggerPlugin *dbg)
+void cbSVWindow::GenerateWatchesRecursive(wxPGProperty* prop, cbDebuggerPlugin *dbg,
+                                          std::vector<cb::shared_ptr<cbWatch>> &watchesToUpdate)
 {
     UpdateWorkingStat(WORKING_STAT_UPDATING);
 
@@ -347,8 +363,9 @@ void cbSVWindow::GenerateWatchesRecursive(wxPGProperty* prop, cbDebuggerPlugin *
             if(base != nullptr)
             {
                 watch.m_property = prop;
-                watch.m_watch    = dbg->AddMemoryRange(  base->GetAddress() , base->GetSize(), wxEmptyString );
+                watch.m_watch    = dbg->AddMemoryRange(base->GetAddress() , base->GetSize(), wxEmptyString, false);
 
+                watchesToUpdate.push_back(watch.m_watch);
                 m_RegisterWatches.push_back(watch);
             }
             else
@@ -365,7 +382,7 @@ void cbSVWindow::GenerateWatchesRecursive(wxPGProperty* prop, cbDebuggerPlugin *
 
     for (size_t i = 0; i < child_count; ++i)
     {
-        GenerateWatchesRecursive(prop->Item(i), dbg);
+        GenerateWatchesRecursive(prop->Item(i), dbg, watchesToUpdate);
     }
 }
 
@@ -392,11 +409,15 @@ void cbSVWindow::OnDebuggerStarted()
     wxPGProperty* root = m_pg_first_page->GetRoot();
     size_t child_count = root->GetChildCount();
     cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
+    std::vector<cb::shared_ptr<cbWatch>> watchesToUpdate;
 
     for (size_t i = 0 ; i < child_count; i++)
     {
-        GenerateWatchesRecursive(root->Item(i), dbg);
+        GenerateWatchesRecursive(root->Item(i), dbg, watchesToUpdate);
     }
+
+    if (!watchesToUpdate.empty())
+        dbg->UpdateWatches(watchesToUpdate);
 
     } catch (const std::length_error& le)
     {
@@ -418,7 +439,7 @@ void cbSVWindow::OnItemExpand(wxPropertyGridEvent &evt)
         RegisterWatch watch;
 
         watch.m_property = prop;
-        watch.m_watch    = dbg->AddMemoryRange( base->GetAddress() , base->GetSize(), wxEmptyString );
+        watch.m_watch    = dbg->AddMemoryRange(base->GetAddress() , base->GetSize(), wxEmptyString, true);
 
         m_RegisterWatches.push_back(watch);
     }
@@ -455,7 +476,7 @@ void cbSVWindow::OnItemChanged(wxPropertyGridEvent &evt)
     cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
     RegisterWatch watch;
     watch.m_property = evt.GetProperty();
-    watch.m_watch    = dbg->AddMemoryRange( prop->GetAddress() , prop->GetSize(), wxEmptyString );
+    watch.m_watch    = dbg->AddMemoryRange(prop->GetAddress() , prop->GetSize(), wxEmptyString, true);
 
     uint64_t da = prop->GetData();
     wxString data;

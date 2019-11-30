@@ -17,6 +17,7 @@
 */
 
 #include <sdk.h> // Code::Blocks SDK
+#include <cbdebugger_interfaces.h>
 #include <macrosmanager.h>
 #include <configurationpanel.h>
 #include <debuggermanager.h>
@@ -25,8 +26,6 @@
 
 #include "cbSystemView.h"
 #include "ProjectConfigPanel.h"
-
-
 
 int ID_DEBUG_WINDOW_MENU=wxNewId();
 
@@ -82,16 +81,50 @@ void cbSystemView::OnAttach()
     evt.minimumSize.Set(200, 150);
     Manager::Get()->ProcessEvent(evt);
 
-    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_STARTED,  new cbEventFunctor<cbSystemView, CodeBlocksEvent>(this, &cbSystemView::OnDebuggerStarted));
-    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_FINISHED, new cbEventFunctor<cbSystemView, CodeBlocksEvent>(this, &cbSystemView::OnDebuggerFinished));
-    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_PAUSED,   new cbEventFunctor<cbSystemView, CodeBlocksEvent>(this, &cbSystemView::OnDebuggerPaused));
-    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_CONTINUED,   new cbEventFunctor<cbSystemView, CodeBlocksEvent>(this, &cbSystemView::OnDebuggerContinued));
+    typedef cbEventFunctor<cbSystemView, CodeBlocksEvent> Functor;
 
-    Manager::Get()->RegisterEventSink(cbEVT_PROJECT_ACTIVATE,   new cbEventFunctor<cbSystemView, CodeBlocksEvent>(this, &cbSystemView::OnProjectActivated));
+    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_STARTED,  new Functor(this, &cbSystemView::OnDebuggerStarted));
+    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_FINISHED, new Functor(this, &cbSystemView::OnDebuggerFinished));
+    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_CONTINUED,   new Functor(this, &cbSystemView::OnDebuggerContinued));
+    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_CURSOR_CHANGED,
+                                      new Functor(this, &cbSystemView::OnDebuggerCursorChanged));
+    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_UPDATED,
+                                      new Functor(this, &cbSystemView::OnDebuggerUpdated));
+
+    Manager::Get()->RegisterEventSink(cbEVT_PROJECT_ACTIVATE,   new Functor(this, &cbSystemView::OnProjectActivated));
 
     ProjectLoaderHooks::HookFunctorBase* myhook = new ProjectLoaderHooks::HookFunctor<cbSystemView>(this, &cbSystemView::OnProjectLoadingHook);
     m_HookId = ProjectLoaderHooks::RegisterHook(myhook);
 
+    DebuggerManager *debuggerManager = Manager::Get()->GetDebuggerManager();
+    cbDebuggerMenuHandler *menuHandler = debuggerManager->GetMenuHandler();
+    if (menuHandler)
+    {
+        struct Item : cbDebuggerWindowMenuItem
+        {
+            explicit Item(cbSVWindow* window) : m_window(window) {}
+            void OnClick(bool enable) override
+            {
+                CodeBlocksDockEvent evt(enable ? cbEVT_SHOW_DOCK_WINDOW : cbEVT_HIDE_DOCK_WINDOW);
+                evt.pWindow = m_window;
+                Manager::Get()->ProcessEvent(evt);
+            }
+            bool IsEnabled() override
+            {
+                return true;
+            }
+            bool IsChecked() override
+            {
+                return IsWindowReallyShown(m_window);
+            }
+        private:
+            cbSVWindow* m_window;
+        };
+
+        menuHandler->RegisterWindowMenu(_("System View"),
+                                        _("Displays the content of MCU's registers, similar to the watches window"),
+                                        new Item(m_window));
+    }
 }
 
 cbSystemViewPerTargetSetting cbSystemView::GetCurrentActiveSetting()
@@ -152,8 +185,19 @@ void cbSystemView::OnDebuggerContinued(CodeBlocksEvent& evt)
     m_window->OnDebuggerContinued();
 }
 
-void cbSystemView::OnDebuggerPaused(CodeBlocksEvent& evt)
+void cbSystemView::OnDebuggerCursorChanged(CodeBlocksEvent& evt)
 {
+    if (!IsWindowReallyShown(m_window))
+        return;
+    cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
+    if (dbg)
+        dbg->RequestUpdate(cbDebuggerPlugin::DebugWindows::MemoryRange);
+}
+
+void cbSystemView::OnDebuggerUpdated(CodeBlocksEvent& evt)
+{
+    if (cbDebuggerPlugin::DebugWindows(evt.GetInt()) != cbDebuggerPlugin::DebugWindows::MemoryRange)
+        return;
     m_window->UpdateWatches();
 }
 
@@ -174,7 +218,12 @@ void cbSystemView::OnRelease(bool appShutDown)
         Manager::Get()->ProcessEvent(evt);
         m_window->Destroy();
     }
-    m_window = 0;
+    m_window = nullptr;
+
+    DebuggerManager *debuggerManager = Manager::Get()->GetDebuggerManager();
+    cbDebuggerMenuHandler *menuHandler = debuggerManager->GetMenuHandler();
+    if (menuHandler)
+        menuHandler->UnregisterWindowMenu(_("System View"));
 }
 
 void cbSystemView::OnWindowMenu(wxCommandEvent& event)
@@ -190,30 +239,6 @@ void cbSystemView::BuildMenu(wxMenuBar* menuBar)
     //to add any menu items you want...
     //Append any items you need in the menu...
     //NOTE: Be careful in here... The application's menubar is at your disposal.
-    //NotImplemented(_T("cbSystemView::BuildMenu()"));
-    /*int id = menuBar->FindMenu(wxT("Debug"));
-    wxMenu* debug_menu = menuBar->GetMenu(id);
-    if(debug_menu == nullptr)
-    {
-        Manager::Get()->GetLogManager()->LogError(_("\"Debug\" menu entry not found"));
-    }
-    else
-    {
-        wxMenuItem* window_menu = debug_menu->FindItem(debug_menu->FindItem(wxT("Debugging windows")));
-        if(window_menu == nullptr)
-        {
-            Manager::Get()->GetLogManager()->LogError(_("\"Debug/Debugging windows\"  menu entry not found"));
-        }
-        else
-        {
-            window_menu->GetSubMenu()->AppendCheckItem(ID_DEBUG_WINDOW_MENU,wxT("System view"),wxT("Show/Hide System view window"));
-        }
-    }*/
-
-    wxMenu* system_view_menu = new wxMenu();
-    system_view_menu->AppendCheckItem(ID_DEBUG_WINDOW_MENU, wxT("Window"));
-
-    menuBar->Append(system_view_menu, wxT("System View"));
 }
 
 cbConfigurationPanel* cbSystemView::GetProjectConfigurationPanel(wxWindow* parent, cbProject* project)

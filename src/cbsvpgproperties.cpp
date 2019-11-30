@@ -302,12 +302,12 @@ svPGRegisterProp::svPGRegisterProp(const SVDRegister &reg, const SVDPeriphery &p
 
         wxPGProperty* prop;
 
-        if((field->m_bitRange.GetWidth() == 1) && (field->m_enumerated_value.GetValuesSize() == 0))
+        /*if((field->m_bitRange.GetWidth() == 1) && (field->m_enumerated_value.GetValuesSize() == 0))
         {
             // Flag
             prop = new svPGBitProp(*field);
         }
-        else if(field->m_enumerated_value.GetValuesSize() != 0)
+        else */if(field->m_enumerated_value.GetValuesSize() != 0)
         {
             // Enumeration
             prop = new svPGEnumFieldProp(*field);
@@ -318,7 +318,7 @@ svPGRegisterProp::svPGRegisterProp(const SVDRegister &reg, const SVDPeriphery &p
             prop = new svPGValueProp(*field);
         }
 
-        AddChild(prop);
+        AddPrivateChild(prop);
     }
 
     desc << wxString::Format(wxT("\nAddress: 0x%llx\n"), GetAddress());
@@ -618,8 +618,7 @@ int svPGEnumFieldProp::GetChoiceSelection() const
     {
         return m_value.GetBool() == true ? 1 : 0;
     }
-
-
+    return wxNOT_FOUND;
 }
 
 
@@ -746,6 +745,8 @@ int svPGBitProp::GetChoiceSelection() const
     {
         return m_value.GetBool();
     }
+
+    return wxNOT_FOUND;
 }
 
 wxString svPGBitProp::ValueToString( wxVariant& value, int argFlags ) const
@@ -780,7 +781,7 @@ void svPGBitProp::SetDataFromBinary(const wxString& str)
     SetValue(var, 0, 0);
 }
 
-bool svPGBitProp::StringToValue( wxVariant& variant, const wxString& text, int argFlags )
+bool svPGBitProp::StringToValue( wxVariant& variant, const wxString& text, int argFlags ) const
 {
     svPGData& data = svPGDataRefFromVariant(variant);
 
