@@ -109,7 +109,7 @@ wxAnimation LoadGifFromResourceFile(wxString name)
 	return ret;
 }
 
-cbSVWindow::cbSVWindow(wxWindow* parent) : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL/* | wxCLIP_CHILDREN*/)
+cbSVWindow::cbSVWindow(wxWindow* parent) : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL/* | wxCLIP_CHILDREN*/,wxT("cbSystemViewWindow"))
 {
     //ctor
     wxBoxSizer* bs = new wxBoxSizer(wxVERTICAL);
