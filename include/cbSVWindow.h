@@ -40,8 +40,8 @@
 
 #include <sdk.h>
 
-#include "cbsvdfilereader.h"
-#include "cbsvpgproperties.h"
+#include "cbSVDFileReader.h"
+#include "cbSVPGProperties.h"
 
 struct RegisterWatch
 {

@@ -37,7 +37,7 @@
 
 #include <cbplugin.h> // for "class cbPlugin"
 
-#include "include/cbsvwindow.h"
+#include "include/cbSVWindow.h"
 
 
 class cbSystemViewPerTargetSetting

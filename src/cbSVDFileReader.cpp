@@ -16,7 +16,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0>.
 */
 
-#include "cbsvdfilereader.h"
+#include "cbSVDFileReader.h"
 
 #include <string.h>
 #include <wx/tokenzr.h>

@@ -25,7 +25,7 @@
 #include <projectloader_hooks.h>
 
 #include "cbSystemView.h"
-#include "ProjectConfigPanel.h"
+#include "cbSVProjectConfigPanel.h"
 
 int ID_DEBUG_WINDOW_MENU = wxNewId();
 
