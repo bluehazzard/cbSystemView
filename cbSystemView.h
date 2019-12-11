@@ -184,14 +184,14 @@ class cbSystemView : public cbPlugin
         void OnDebuggerContinued(CodeBlocksEvent& evt);
         void OnDebuggerCursorChanged(CodeBlocksEvent& evt);
         void OnDebuggerUpdated(CodeBlocksEvent& evt);
-
         void OnProjectActivated(CodeBlocksEvent& evt);
-
+        void OnTargetSelected(CodeBlocksEvent& evt);
         void OnProjectLoadingHook(cbProject* project, TiXmlElement* elem, bool loading);
 
     private:
 
         void OnWindowMenu(wxCommandEvent& event);
+        void LoadSVDFile();
 
         std::map<cbProject*, cbSystemViewSetting> m_settings;
 
