@@ -32,7 +32,7 @@
 #include <wx/wxprec.h>
 
 #ifndef WX_PRECOMP
-    #include <wx/wx.h>
+#include <wx/wx.h>
 #endif
 
 #include <cbplugin.h> // for "class cbPlugin"
@@ -42,40 +42,40 @@
 
 class cbSystemViewPerTargetSetting
 {
-public:
-    cbSystemViewPerTargetSetting()  {};
-    virtual ~cbSystemViewPerTargetSetting() {};
+    public:
+        cbSystemViewPerTargetSetting()  {};
+        virtual ~cbSystemViewPerTargetSetting() {};
 
-    void SaveToNode(TiXmlNode* node);
-    void LoadFromNode(TiXmlNode* node);
+        void SaveToNode(TiXmlNode* node);
+        void LoadFromNode(TiXmlNode* node);
 
-    wxString m_svdFilePath;
+        wxString m_svdFilePath;
 
-    static const wxString PROJECT_TARGET_NAME;
+        static const wxString PROJECT_TARGET_NAME;
 
 };
 
 class cbSystemViewSetting
 {
-public:
-    cbSystemViewSetting()
-    {
-        // Create Project setting
-        cbSystemViewPerTargetSetting pro;
-        m_targetSettings[0] = pro;
-    };
-    virtual ~cbSystemViewSetting()      {};
+    public:
+        cbSystemViewSetting()
+        {
+            // Create Project setting
+            cbSystemViewPerTargetSetting pro;
+            m_targetSettings[0] = pro;
+        };
+        virtual ~cbSystemViewSetting()      {};
 
-    void SaveToNode(TiXmlNode* node, cbProject* project);
-    void LoadFromNode(TiXmlNode* node, cbProject* project);
+        void SaveToNode(TiXmlNode* node, cbProject* project);
+        void LoadFromNode(TiXmlNode* node, cbProject* project);
 
 
-    cbSystemViewPerTargetSetting* GetSettingsForTarget(wxString name);
+        cbSystemViewPerTargetSetting* GetSettingsForTarget(wxString name);
 
-public:
+    public:
 
-    // Target with Address 0 is the project global setting
-    std::map<ProjectBuildTarget*,cbSystemViewPerTargetSetting> m_targetSettings;
+        // Target with Address 0 is the project global setting
+        std::map<ProjectBuildTarget*, cbSystemViewPerTargetSetting> m_targetSettings;
 };
 
 class cbSystemView : public cbPlugin
@@ -103,7 +103,7 @@ class cbSystemView : public cbPlugin
           * @param parent The parent window.
           * @return A pointer to the plugin's cbConfigurationPanel. It is deleted by the caller.
           */
-        virtual cbConfigurationPanel* GetConfigurationPanel(wxWindow* parent){ return 0; }
+        virtual cbConfigurationPanel* GetConfigurationPanel(wxWindow* parent) { return 0; }
 
         /** Return plugin's configuration panel for projects.
           * The panel returned from this function will be added in the project's
@@ -138,7 +138,7 @@ class cbSystemView : public cbPlugin
           * @param menu pointer to the popup menu
           * @param data pointer to FileTreeData object (to access/modify the file tree)
           */
-        virtual void BuildModuleMenu(const ModuleType type, wxMenu* menu, const FileTreeData* data = 0){}
+        virtual void BuildModuleMenu(const ModuleType type, wxMenu* menu, const FileTreeData* data = 0) {}
 
         /** This method is called by Code::Blocks and is used by the plugin
           * to add any toolbar items it needs on Code::Blocks's toolbar.\n
@@ -148,7 +148,7 @@ class cbSystemView : public cbPlugin
           * @param toolBar the wxToolBar to create items on
           * @return The plugin should return true if it needed the toolbar, false if not
           */
-        virtual bool BuildToolBar(wxToolBar* toolBar){ return false; }
+        virtual bool BuildToolBar(wxToolBar* toolBar) { return false; }
 
         cbSystemViewSetting GetSettings(cbProject* project);
         void SetSettings(cbSystemViewSetting settings, cbProject* project);
@@ -193,7 +193,7 @@ class cbSystemView : public cbPlugin
 
         void OnWindowMenu(wxCommandEvent& event);
 
-        std::map<cbProject*,cbSystemViewSetting> m_settings;
+        std::map<cbProject*, cbSystemViewSetting> m_settings;
 
         cbSVWindow* m_window;
         int m_HookId;

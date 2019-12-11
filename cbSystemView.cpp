@@ -27,7 +27,7 @@
 #include "cbSystemView.h"
 #include "ProjectConfigPanel.h"
 
-int ID_DEBUG_WINDOW_MENU=wxNewId();
+int ID_DEBUG_WINDOW_MENU = wxNewId();
 
 const wxString cbSystemViewPerTargetSetting::PROJECT_TARGET_NAME = wxT("#project#");
 
@@ -42,7 +42,7 @@ namespace
 // events handling
 BEGIN_EVENT_TABLE(cbSystemView, cbPlugin)
     // add any events you want to handle here
-    EVT_MENU(ID_DEBUG_WINDOW_MENU,cbSystemView::OnWindowMenu)
+    EVT_MENU(ID_DEBUG_WINDOW_MENU, cbSystemView::OnWindowMenu)
 END_EVENT_TABLE()
 
 // constructor
@@ -51,7 +51,7 @@ cbSystemView::cbSystemView()
     // Make sure our resources are available.
     // In the generated boilerplate code we have no resources but when
     // we add some, it will be nice that this code is in place already ;)
-    if(!Manager::LoadResource(_T("cbSystemView.zip")))
+    if (!Manager::LoadResource(_T("cbSystemView.zip")))
     {
         NotifyMissingFile(_T("cbSystemView.zip"));
     }
@@ -98,27 +98,28 @@ void cbSystemView::OnAttach()
 
     DebuggerManager *debuggerManager = Manager::Get()->GetDebuggerManager();
     cbDebuggerMenuHandler *menuHandler = debuggerManager->GetMenuHandler();
+
     if (menuHandler)
     {
         struct Item : cbDebuggerWindowMenuItem
         {
-            explicit Item(cbSVWindow* window) : m_window(window) {}
-            void OnClick(bool enable) override
-            {
-                CodeBlocksDockEvent evt(enable ? cbEVT_SHOW_DOCK_WINDOW : cbEVT_HIDE_DOCK_WINDOW);
-                evt.pWindow = m_window;
-                Manager::Get()->ProcessEvent(evt);
-            }
-            bool IsEnabled() override
-            {
-                return true;
-            }
-            bool IsChecked() override
-            {
-                return IsWindowReallyShown(m_window);
-            }
-        private:
-            cbSVWindow* m_window;
+                explicit Item(cbSVWindow* window) : m_window(window) {}
+                void OnClick(bool enable) override
+                {
+                    CodeBlocksDockEvent evt(enable ? cbEVT_SHOW_DOCK_WINDOW : cbEVT_HIDE_DOCK_WINDOW);
+                    evt.pWindow = m_window;
+                    Manager::Get()->ProcessEvent(evt);
+                }
+                bool IsEnabled() override
+                {
+                    return true;
+                }
+                bool IsChecked() override
+                {
+                    return IsWindowReallyShown(m_window);
+                }
+            private:
+                cbSVWindow* m_window;
         };
 
         menuHandler->RegisterWindowMenu(_("System View"),
@@ -136,14 +137,16 @@ cbSystemViewPerTargetSetting cbSystemView::GetCurrentActiveSetting()
     ProjectBuildTarget *bt = project->GetBuildTarget(build_target_name);
 
     auto itr_pro = m_settings.find(project);
-    if(itr_pro == m_settings.end())
+
+    if (itr_pro == m_settings.end())
     {
         Manager::Get()->GetLogManager()->LogError(_T("cbSystemView::OnDebuggerStarted(): active project has no sv setting"));
         return cbSystemViewPerTargetSetting();
     }
 
     auto itr_bt = itr_pro->second.m_targetSettings.find(bt);
-    if(itr_bt == itr_pro->second.m_targetSettings.end())
+
+    if (itr_bt == itr_pro->second.m_targetSettings.end())
     {
         // the current target has no settings, so fall back to project settings
         itr_bt = itr_pro->second.m_targetSettings.find(0);
@@ -163,7 +166,7 @@ void cbSystemView::OnDebuggerStarted(CodeBlocksEvent& evt)
 
     wxString svdFilePath = settings.m_svdFilePath;
 
-    if(svdFilePath == wxEmptyString)
+    if (svdFilePath == wxEmptyString)
     {
         svdFilePath = m_settings[project].m_targetSettings[0].m_svdFilePath;
     }
@@ -189,7 +192,9 @@ void cbSystemView::OnDebuggerCursorChanged(CodeBlocksEvent& evt)
 {
     if (!IsWindowReallyShown(m_window))
         return;
+
     cbDebuggerPlugin *dbg = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
+
     if (dbg)
         dbg->RequestUpdate(cbDebuggerPlugin::DebugWindows::MemoryRange);
 }
@@ -198,6 +203,7 @@ void cbSystemView::OnDebuggerUpdated(CodeBlocksEvent& evt)
 {
     if (cbDebuggerPlugin::DebugWindows(evt.GetInt()) != cbDebuggerPlugin::DebugWindows::MemoryRange)
         return;
+
     m_window->UpdateWatches();
 }
 
@@ -218,10 +224,12 @@ void cbSystemView::OnRelease(bool appShutDown)
         Manager::Get()->ProcessEvent(evt);
         m_window->Destroy();
     }
+
     m_window = nullptr;
 
     DebuggerManager *debuggerManager = Manager::Get()->GetDebuggerManager();
     cbDebuggerMenuHandler *menuHandler = debuggerManager->GetMenuHandler();
+
     if (menuHandler)
         menuHandler->UnregisterWindowMenu(_("System View"));
 }
@@ -256,7 +264,7 @@ void cbSystemView::OnProjectActivated(CodeBlocksEvent& evt)
 
     wxString svdFilePath = settings.m_svdFilePath;
 
-    if(svdFilePath == wxEmptyString)
+    if (svdFilePath == wxEmptyString)
     {
         svdFilePath = m_settings[project].m_targetSettings[0].m_svdFilePath;
     }
@@ -271,16 +279,17 @@ void cbSystemView::OnProjectActivated(CodeBlocksEvent& evt)
 void cbSystemView::OnProjectLoadingHook(cbProject* project, TiXmlElement* elem, bool loading)
 {
     auto itr = m_settings.find(project);
-    if(loading)
+
+    if (loading)
     {
-        if(itr == m_settings.end())
+        if (itr == m_settings.end())
             m_settings[project] = cbSystemViewSetting();
 
         m_settings[project].LoadFromNode(elem, project);
     }
     else
     {
-        if(itr == m_settings.end())
+        if (itr == m_settings.end())
             m_settings[project] = cbSystemViewSetting();
 
         m_settings[project].SaveToNode(elem, project);
@@ -291,10 +300,12 @@ void cbSystemView::OnProjectLoadingHook(cbProject* project, TiXmlElement* elem, 
 cbSystemViewSetting cbSystemView::GetSettings(cbProject* project)
 {
     auto itr = m_settings.find(project);
-    if(itr == m_settings.end() )
+
+    if (itr == m_settings.end())
     {
         m_settings[project] = cbSystemViewSetting();
     }
+
     return m_settings[project];
 }
 
@@ -307,7 +318,8 @@ void cbSystemViewPerTargetSetting::SaveToNode(TiXmlNode* node)
 {
 
     TiXmlElement* svdFileNode = node->FirstChildElement("svdFile");
-    if(svdFileNode == nullptr)   // We have not found the right node, so we create it
+
+    if (svdFileNode == nullptr)  // We have not found the right node, so we create it
         svdFileNode = node->InsertEndChild(TiXmlElement("svdFile"))->ToElement();
 
     svdFileNode->SetAttribute("path", cbU2C(m_svdFilePath));
@@ -316,9 +328,10 @@ void cbSystemViewPerTargetSetting::SaveToNode(TiXmlNode* node)
 void cbSystemViewPerTargetSetting::LoadFromNode(TiXmlNode* node)
 {
     TiXmlElement* svdFileNode = node->FirstChildElement("svdFile");
-    if(svdFileNode != nullptr)
+
+    if (svdFileNode != nullptr)
     {
-        m_svdFilePath = cbC2U( svdFileNode->Attribute("path") );
+        m_svdFilePath = cbC2U(svdFileNode->Attribute("path"));
     }
 }
 
@@ -327,27 +340,33 @@ void cbSystemViewSetting::SaveToNode(TiXmlNode* node, cbProject* project)
 {
     // First search for the target node with the right target name
     TiXmlElement* conf = node->FirstChildElement("cbSystemView");
+
     if (!conf)
     {
         conf = node->InsertEndChild(TiXmlElement("cbSystemView"))->ToElement();
     }
 
-    for(auto itr = m_targetSettings.begin(); itr != m_targetSettings.end(); ++itr)
+    for (auto itr = m_targetSettings.begin(); itr != m_targetSettings.end(); ++itr)
     {
         TiXmlElement* targetNode = conf->FirstChildElement("target");
         wxString settingTargetName = itr->first == 0 ? cbSystemViewPerTargetSetting::PROJECT_TARGET_NAME : itr->first->GetTitle();
-        while(targetNode)
+
+        while (targetNode)
         {
             wxString targetName = cbC2U(targetNode->Attribute("name"));
-            if(targetName == settingTargetName)
+
+            if (targetName == settingTargetName)
                 break;
+
             targetNode = targetNode->NextSiblingElement("target");
         }
-        if(targetNode == nullptr)
+
+        if (targetNode == nullptr)
         {
             targetNode = conf->InsertEndChild(TiXmlElement("target"))->ToElement();
             targetNode->SetAttribute("name", cbU2C(settingTargetName));
         }
+
         itr->second.SaveToNode(targetNode);
     }
 }
@@ -355,21 +374,25 @@ void cbSystemViewSetting::SaveToNode(TiXmlNode* node, cbProject* project)
 void cbSystemViewSetting::LoadFromNode(TiXmlNode* node, cbProject* project)
 {
     TiXmlElement* conf = node->FirstChildElement("cbSystemView");
+
     if (conf)
     {
         TiXmlElement* targetNode = conf->FirstChildElement("target");
-        while(targetNode)
+
+        while (targetNode)
         {
             wxString targetName = cbC2U(targetNode->Attribute("name"));
             ProjectBuildTarget* bt = 0;
-            if(targetName == cbSystemViewPerTargetSetting::PROJECT_TARGET_NAME )
+
+            if (targetName == cbSystemViewPerTargetSetting::PROJECT_TARGET_NAME)
             {
                 bt = 0;
             }
             else
             {
                 bt = project->GetBuildTarget(targetName);
-                if(bt == nullptr)
+
+                if (bt == nullptr)
                 {
                     targetNode = targetNode->NextSiblingElement("target");
                     continue;

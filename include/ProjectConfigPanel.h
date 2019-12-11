@@ -32,24 +32,24 @@ class cbSystemViewSetting;
 
 class ProjectConfigPanel: public cbConfigurationPanel
 {
-	public:
+    public:
 
-		ProjectConfigPanel(wxWindow* parent,
+        ProjectConfigPanel(wxWindow* parent,
                            cbSystemView* plugin,
                            cbProject* project);
 
-		virtual ~ProjectConfigPanel();
+        virtual ~ProjectConfigPanel();
 
-		//(*Declarations(ProjectConfigPanel)
-		wxButton* m_BtnBrowseSvdFilePath;
-		wxListBox* m_lstTargets;
-		wxTextCtrl* m_CtrlSvdFilePath;
-		//*)
+        //(*Declarations(ProjectConfigPanel)
+        wxButton* m_BtnBrowseSvdFilePath;
+        wxListBox* m_lstTargets;
+        wxTextCtrl* m_CtrlSvdFilePath;
+        //*)
 
         /// @return the panel's title.
         virtual wxString GetTitle() const { return _("System view configuration"); };
         /// @return the panel's bitmap base name. You must supply two bitmaps: \<basename\>.png and \<basename\>-off.png...
-        virtual wxString GetBitmapBaseName() const {{ return wxT("systemview"); };};
+        virtual wxString GetBitmapBaseName() const { { return wxT("systemview"); };};
         /// Called when the user chooses to apply the configuration.
         virtual void OnApply();
         /// Called when the user chooses to cancel the configuration.
@@ -65,24 +65,24 @@ class ProjectConfigPanel: public cbConfigurationPanel
         void SaveCurrentSettings();
         void LoadCurrentSettings();
 
-	protected:
+    protected:
 
-		//(*Identifiers(ProjectConfigPanel)
-		//*)
+        //(*Identifiers(ProjectConfigPanel)
+        //*)
 
-	private:
+    private:
 
-	    cbProject* m_project;
-	    cbSystemView* m_plugin;
-	    cbSystemViewSetting m_settings;
-	    wxString m_lastTargetSel;
+        cbProject* m_project;
+        cbSystemView* m_plugin;
+        cbSystemViewSetting m_settings;
+        wxString m_lastTargetSel;
 
-		//(*Handlers(ProjectConfigPanel)
-		void OnBtnBrowseSvdFilePathClick(wxCommandEvent& event);
-		void OnlstTargetsSelect(wxCommandEvent& event);
-		//*)
+        //(*Handlers(ProjectConfigPanel)
+        void OnBtnBrowseSvdFilePathClick(wxCommandEvent& event);
+        void OnlstTargetsSelect(wxCommandEvent& event);
+        //*)
 
-		DECLARE_EVENT_TABLE()
+        DECLARE_EVENT_TABLE()
 };
 
 
