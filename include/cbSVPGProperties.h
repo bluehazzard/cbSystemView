@@ -20,7 +20,7 @@
 #define CBSVPGPROPERTIES_H
 
 #include <cstdint>
-#include "cbsvdfilereader.h"
+#include "cbSVDFileReader.h"
 #include <map>
 #include <algorithm>
 #include <sdk.h>

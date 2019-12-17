@@ -18,7 +18,7 @@
 
 
 #include <sdk.h>
-#include "ProjectConfigPanel.h"
+#include "cbSVProjectConfigPanel.h"
 #include <wx/intl.h>
 #include <wx/xrc/xmlres.h>
 #include <wx/listbox.h>

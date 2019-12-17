@@ -16,7 +16,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0>.
 */
 
-#include "cbsvpgproperties.h"
+#include "cbSVPGProperties.h"
 #include <wx/object.h>
 
 #include <cbcolourmanager.h>
