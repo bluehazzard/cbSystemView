@@ -188,6 +188,24 @@ class svPGBaseProp : public wxPGProperty
         virtual wxString GetDescription()                       { return m_desc; };
         virtual void SetDescription(const wxString& desc)       { m_desc = desc; };
 
+    protected:
+
+        /** \brief Set the description and help strings to a default value
+        *
+        * \param field Field to get basic information from.
+        * \return virtual void
+        *
+        */
+        void SetDefaultDescription(const SVDField &field)
+        {
+            wxString desc =  field.GetDesc();
+
+            desc << wxString::Format(wxT("\nBit size: %lld\n"), GetBitSize());
+            desc << wxString::Format(wxT("Bit offset: %lld\n"), GetBitOffset());
+
+            SetDescription(desc);
+            SetHelpString(desc);
+        }
 
     private:
 

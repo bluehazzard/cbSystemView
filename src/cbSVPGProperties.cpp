@@ -524,14 +524,7 @@ svPGEnumFieldProp::svPGEnumFieldProp(SVDField &field) : svPGBaseProp(field)
 {
     svPGData value(field.GetResetValue());
 
-    wxString desc =  field.GetDesc();
-
-    desc << wxString::Format(wxT("\nBit size: %lld\n"), GetBitSize());
-    desc << wxString::Format(wxT("Bit offset: %lld\n"), GetBitOffset());
-
-    SetDescription(desc);
-    SetHelpString(desc);
-
+    SetDefaultDescription(field);
 
     // Find best length for value and description part
     auto itr = field.m_enumerated_value.GetValuesBegin();
@@ -704,15 +697,9 @@ svPGValueProp::svPGValueProp(const SVDField& field) : svPGBaseProp(field)
 
     svPGData value(field.GetResetValue());
 
-    wxString desc =  field.GetDesc();
-
-    desc << wxString::Format(wxT("\nBit size: %lld\n"), GetBitSize());
-    desc << wxString::Format(wxT("Bit offset: %lld\n"), GetBitOffset());
-
-    SetDescription(desc);
-    SetHelpString(desc);
-
     m_value << value;
+
+    SetDefaultDescription(field);
 }
 
 wxString svPGValueProp::ValueToString(wxVariant& value, int argFlags) const
@@ -764,16 +751,9 @@ svPGBitProp::svPGBitProp(const SVDField &field) : svPGBaseProp(field)
 
     SetAttribute(wxT("UseCheckbox"), true);
 
-    wxString desc =  field.GetDesc();
-
-    desc << wxString::Format(wxT("\nBit size: %lld\n"), GetBitSize());
-    desc << wxString::Format(wxT("Bit offset: %lld\n"), GetBitOffset());
-
-    SetDescription(desc);
-    SetHelpString(desc);
-
     m_value << value;
 
+    SetDefaultDescription(field);
 };
 
 int svPGBitProp::GetChoiceSelection() const
