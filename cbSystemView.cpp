@@ -83,15 +83,20 @@ void cbSystemView::OnAttach()
 
     typedef cbEventFunctor<cbSystemView, CodeBlocksEvent> Functor;
 
-    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_STARTED,  new Functor(this, &cbSystemView::OnDebuggerStarted));
-    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_FINISHED, new Functor(this, &cbSystemView::OnDebuggerFinished));
-    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_CONTINUED,   new Functor(this, &cbSystemView::OnDebuggerContinued));
+    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_STARTED,
+                                      new Functor(this, &cbSystemView::OnDebuggerStarted));
+    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_FINISHED,
+                                      new Functor(this, &cbSystemView::OnDebuggerFinished));
+    Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_CONTINUED,
+                                      new Functor(this, &cbSystemView::OnDebuggerContinued));
     Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_CURSOR_CHANGED,
                                       new Functor(this, &cbSystemView::OnDebuggerCursorChanged));
     Manager::Get()->RegisterEventSink(cbEVT_DEBUGGER_UPDATED,
                                       new Functor(this, &cbSystemView::OnDebuggerUpdated));
-
-    Manager::Get()->RegisterEventSink(cbEVT_PROJECT_ACTIVATE,   new Functor(this, &cbSystemView::OnProjectActivated));
+    Manager::Get()->RegisterEventSink(cbEVT_PROJECT_ACTIVATE,
+                                      new Functor(this, &cbSystemView::OnProjectActivated));
+    Manager::Get()->RegisterEventSink(cbEVT_BUILDTARGET_SELECTED,
+                                      new Functor(this, &cbSystemView::OnTargetSelected));
 
     ProjectLoaderHooks::HookFunctorBase* myhook = new ProjectLoaderHooks::HookFunctor<cbSystemView>(this, &cbSystemView::OnProjectLoadingHook);
     m_HookId = ProjectLoaderHooks::RegisterHook(myhook);
@@ -158,23 +163,7 @@ cbSystemViewPerTargetSetting cbSystemView::GetCurrentActiveSetting()
 
 void cbSystemView::OnDebuggerStarted(CodeBlocksEvent& evt)
 {
-
-    cbSystemViewPerTargetSetting settings = GetCurrentActiveSetting();
-    cbProject* project = Manager::Get()->GetProjectManager()->GetActiveProject();
-    wxString build_target_name = project->GetActiveBuildTarget();
-    ProjectBuildTarget *bt = project->GetBuildTarget(build_target_name);
-
-    wxString svdFilePath = settings.m_svdFilePath;
-
-    if (svdFilePath == wxEmptyString)
-    {
-        svdFilePath = m_settings[project].m_targetSettings[0].m_svdFilePath;
-    }
-
-    Manager::Get()->GetMacrosManager()->ReplaceMacros(svdFilePath, bt);
-    Manager::Get()->GetLogManager()->Log(_T("Load SVD file: ") + svdFilePath);
-
-    m_window->SetSVDFile(svdFilePath);
+    LoadSVDFile();
     m_window->OnDebuggerStarted();
 }
 
@@ -255,25 +244,41 @@ cbConfigurationPanel* cbSystemView::GetProjectConfigurationPanel(wxWindow* paren
     return panel;
 }
 
-void cbSystemView::OnProjectActivated(CodeBlocksEvent& evt)
+void cbSystemView::LoadSVDFile()
 {
     cbSystemViewPerTargetSetting settings = GetCurrentActiveSetting();
     cbProject* project = Manager::Get()->GetProjectManager()->GetActiveProject();
-    wxString build_target_name = project->GetActiveBuildTarget();
-    ProjectBuildTarget *bt = project->GetBuildTarget(build_target_name);
 
-    wxString svdFilePath = settings.m_svdFilePath;
-
-    if (svdFilePath == wxEmptyString)
+    if (project)
     {
-        svdFilePath = m_settings[project].m_targetSettings[0].m_svdFilePath;
+        wxString build_target_name = project->GetActiveBuildTarget();
+        ProjectBuildTarget *bt = project->GetBuildTarget(build_target_name);
+
+        wxString svdFilePath = settings.m_svdFilePath;
+
+        if (svdFilePath == wxEmptyString)
+        {
+            svdFilePath = m_settings[project].m_targetSettings[0].m_svdFilePath;
+        }
+
+        Manager::Get()->GetMacrosManager()->ReplaceMacros(svdFilePath, bt);
+        Manager::Get()->GetLogManager()->Log(_T("Load SVD file: ") + svdFilePath + " for target:" + build_target_name);
+
+        m_window->SetSVDFile(svdFilePath);
     }
+}
 
-    Manager::Get()->GetMacrosManager()->ReplaceMacros(svdFilePath, bt);
-    Manager::Get()->GetLogManager()->Log(_T("Load SVD file: ") + svdFilePath);
 
-    m_window->SetSVDFile(svdFilePath);
+void cbSystemView::OnProjectActivated(CodeBlocksEvent& evt)
+{
+    LoadSVDFile();
+}
 
+void cbSystemView::OnTargetSelected(CodeBlocksEvent& evt)
+{
+    // Get target selected, and load the appropriate SVD file, update the grid to match, if we have a project
+    if (Manager::Get()->GetProjectManager()->GetActiveProject())
+        LoadSVDFile();
 }
 
 void cbSystemView::OnProjectLoadingHook(cbProject* project, TiXmlElement* elem, bool loading)
